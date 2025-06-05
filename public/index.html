@@ -13,12 +13,12 @@
       --secondary-color: #48c774;
       --accent-color: #6c5ce7;
       --text-color: #363636;
-      --bg-color: #f8f9fa; /* Slightly simpler background */
+      --bg-color: #f8f9fa;
       --danger-color: #f14668;
       --danger-dark: #d93058;
       --card-bg: white;
       --card-shadow: 0 6px 25px rgba(0, 0, 0, 0.07);
-      --grid-gap: 1rem; 
+      --grid-gap: 0.75rem; /* Slightly reduced gap for denser layout */
     }
 
     [v-cloak] {
@@ -29,7 +29,6 @@
       min-height: 100%;
       font-family: 'Roboto', sans-serif;
       background-color: var(--bg-color);
-      /* Removed complex background-image for simplicity */
       overflow-x: hidden;
       padding-bottom: 2rem; 
     }
@@ -65,7 +64,7 @@
       background-color: rgba(255, 255, 255, 0.9);
     }
     .textarea {
-        min-height: 8em; 
+        min-height: 7em; /* Adjusted height */
         height: auto;
         padding: 1rem;
     }
@@ -77,57 +76,51 @@
     }
     
     .progress {
-      height: 6px; 
-      border-radius: 3px;
+      height: 5px; /* Slimmer progress bar */
+      border-radius: 2.5px;
       overflow: hidden;
-      margin-top: 0.35rem; 
-      background-color: rgba(234, 234, 234, 0.7);
+      margin-top: 0.25rem; 
+      background-color: rgba(234, 234, 234, 0.6);
     }
 
     .progress::-webkit-progress-value {
       background-color: var(--primary-color);
-      animation: progressAnimation 1.2s linear infinite;
       transition: width 0.3s ease-out;
     }
      .progress::-moz-progress-bar {
       background-color: var(--primary-color);
-      animation: progressAnimation 1.2s linear infinite;
       transition: width 0.3s ease-out;
-    }
-
-    @keyframes progressAnimation { 
-      0% { background-position: 1.2rem 0; }
-      100% { background-position: 0 0; }
     }
 
     .keys-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Adjusted minmax for ~5 items if container is wide enough */
+        /* Aim for ~5 items: 100% / 5 = 20%. With gap, min value should be smaller */
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); /* Smaller min for more items */
         gap: var(--grid-gap);
         margin-bottom: 2rem;
     }
 
     .key-entry-card {
       background: var(--card-bg);
-      border-radius: 10px; 
+      border-radius: 8px; 
       box-shadow: var(--card-shadow);
       display: flex;
       flex-direction: column;
-      transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+      transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
       position: relative; 
-      padding: 1rem; 
+      padding: 0.8rem; /* Reduced padding for smaller cards */
     }
     .key-entry-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        box-shadow: 0 7px 18px rgba(0,0,0,0.08);
     }
 
     .token {
-      font-size: 1.8rem; /* Slightly smaller for denser grid */
+      font-size: 1.6rem; /* Smaller token for smaller cards */
       font-weight: 700;
-      letter-spacing: 2px; 
-      margin: 0.2rem 0 0.4rem 0; 
-      padding: 0.2rem 0;
+      letter-spacing: 1.5px; 
+      margin: 0.1rem 0 0.2rem 0; 
+      padding: 0.1rem 0;
       background-image: linear-gradient(135deg, var(--primary-color), var(--accent-color));
       -webkit-background-clip: text;
       background-clip: text;
@@ -142,39 +135,38 @@
     }
 
     @keyframes pulse {
-      from { opacity: 0.85; transform: scale(1); }
-      to { opacity: 1; transform: scale(1.01); }
+      from { opacity: 0.85; }
+      to { opacity: 1; }
     }
 
     .delete-button {
-      background-color: rgba(200, 50, 50, 0.1); 
+      background-color: transparent; 
       color: var(--danger-color);
-      border: 1px solid rgba(200, 50, 50, 0.2);
+      border: none;
       border-radius: 50%; 
-      width: 26px; /* Smaller delete button */
-      height: 26px;
+      width: 24px; 
+      height: 24px;
       padding: 0;
       transition: all 0.2s;
       position: absolute;
-      top: 6px; 
-      right: 6px;
+      top: 5px; 
+      right: 5px;
       display: flex;
       align-items: center;
       justify-content: center;
-      opacity: 0.6; 
+      opacity: 0.5; 
     }
     .key-entry-card:hover .delete-button {
         opacity: 1; 
     }
     .delete-button:hover {
-      background-color: var(--danger-color);
-      color: white;
+      background-color: rgba(241, 70, 104, 0.15); /* Lighter hover for direct delete */
+      color: var(--danger-dark);
       transform: scale(1.1);
-      border-color: var(--danger-dark);
     }
     .delete-button .icon {
         margin: 0;
-        font-size: 0.6rem; /* Smaller icon */
+        font-size: 0.7rem; 
     }
     
     .button.is-primary, .button.is-success, .button.is-danger { 
@@ -183,33 +175,15 @@
         padding: 0.75rem 1.5rem; 
         transition: all 0.2s ease-out;
     }
-    .button.is-primary {
-        background-color: var(--primary-color);
-        box-shadow: 0 4px 12px rgba(50, 115, 220, 0.2);
-    }
-    .button.is-primary:hover {
-        background-color: var(--primary-dark);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(50, 115, 220, 0.3);
-    }
-    .button.is-success {
-        background-color: var(--secondary-color);
-        box-shadow: 0 4px 12px rgba(72, 199, 116, 0.2);
-    }
-    .button.is-success:hover {
-        background-color: #3db865;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(72, 199, 116, 0.3);
-    }
-     .button.is-danger {
+     .button.is-danger.is-outlined { /* Style for outlined danger button */
+        border-color: var(--danger-color);
+        color: var(--danger-color);
+     }
+     .button.is-danger.is-outlined:hover {
         background-color: var(--danger-color);
-        box-shadow: 0 4px 12px rgba(241, 70, 104, 0.2);
-    }
-     .button.is-danger:hover {
-        background-color: var(--danger-dark);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(241, 70, 104, 0.3);
-    }
+        color: white;
+     }
+
 
     .toast {
       position: fixed;
@@ -248,34 +222,39 @@
     .key-name-display {
         font-weight: 500; 
         color: var(--text-color);
-        margin-bottom: 0.2rem; 
-        font-size: 0.9rem; /* Smaller name in card */
+        margin-bottom: 0.1rem; 
+        font-size: 0.85rem; 
         cursor: pointer;
-        display: inline-block; 
+        display: block; /* Make it block to take full width for easier click */
         padding: 0.1rem 0.2rem;
-        border-radius: 4px;
+        border-radius: 3px;
         transition: background-color 0.2s;
         line-height: 1.2;
         word-break: break-word; 
+        text-align: center; /* Center the name */
     }
     .key-name-display:hover {
         background-color: #f0f0f0;
     }
     .key-name-input {
-        font-size: 0.9rem; 
+        font-size: 0.85rem; 
         font-weight: 500;
         padding: 0.2rem 0.4rem;
         border: 1px solid var(--primary-color);
         border-radius: 4px;
         width: 100%; 
         margin-bottom: 0.25rem;
+        box-sizing: border-box; /* Ensure padding doesn't make it overflow */
     }
     .secret-key-display {
-        font-size: 0.7rem; /* Even smaller secret preview */
-        color: #aaa; /* Lighter color for secret */
+        font-size: 0.65rem; 
+        color: #bbb; 
         word-break: break-all;
-        margin-bottom: 0.5rem; 
+        margin-bottom: 0.3rem; 
         line-height: 1.1;
+        text-align: center; /* Center the secret preview */
+        height: 2.2em; /* Attempt to reserve space for two lines */
+        overflow: hidden;
     }
     .no-keys-message {
         text-align: center;
@@ -321,7 +300,7 @@
     .actions-bar {
         display: flex;
         justify-content: flex-end;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem; /* Reduced margin */
     }
   </style>
 </head>
@@ -366,7 +345,7 @@
               <span class="has-text-grey is-size-7">{{ keyEntry.updatingIn }} 秒后更新</span>
               <progress class="progress is-info is-small" :value="keyEntry.updatingIn" :max="keyEntry.period"></progress>
             </div>
-            <p class="title is-4 token" :class="{ 'pulse': keyEntry.updatingIn <= 5 }" :id="'token-' + keyEntry.id" @click="copyToken(keyEntry.token, keyEntry.id)">
+            <p class="title is-5 token" :class="{ 'pulse': keyEntry.updatingIn <= 5 }" :id="'token-' + keyEntry.id" @click="copyToken(keyEntry.token, keyEntry.id)"> <!-- Changed to is-5 for smaller token -->
               {{ keyEntry.token }}
             </p>
         </div>
@@ -377,17 +356,19 @@
       </div>
 
       <div class="box add-key-section mt-5">
-        <h2 class="title is-4 has-text-centered mb-4">添加/更新密钥</h2>
+        <h2 class="title is-4 has-text-centered mb-4">添加密钥</h2>
         <div class="field">
-          <label class="label">密钥列表 (每行一个)</label>
+          <label class="label">密钥列表 (每行一个, 粘贴或输入后自动处理)</label>
           <div class="control">
             <textarea class="textarea" 
                       v-model="batchSecretsInput" 
+                      @paste.prevent="handlePaste" 
+                      @blur="processBatchInputOnBlur"
                       @input="debounceProcessBatchInput"
                       placeholder="BCLQ5FLW3TLOTUXK&#10;anthonywright@stu.sicau.edu.cn	X3ID2JRHA6H53JIR&#10;Google:G6RYBUGRDCS74LD4" 
                       rows="5"></textarea>
           </div>
-          <p class="help">支持格式：<code>密钥</code>, <code>名称:密钥</code>, <code>邮箱\t密钥</code>。位数(默认6)和周期(默认30)使用默认值。算法固定为SHA1。</p>
+          <p class="help">支持格式：<code>密钥</code>, <code>名称:密钥</code>, <code>名称\t密钥</code>。位数(默认6)和周期(默认30)使用默认值。算法固定为SHA1。</p>
         </div>
          <div class="columns is-mobile">
           <div class="column">
@@ -407,20 +388,13 @@
             </div>
           </div>
         </div>
-        <div class="field has-text-centered mt-4">
-            <button class="button is-success is-fullwidth" @click="processBatchInput" :disabled="!batchSecretsInput.trim()">
-              <span class="icon">
-                  <i class="fas fa-plus-circle"></i>
-              </span>
-              <span>添加输入框中的密钥</span>
-            </button>
-          </div>
+        <!-- "添加输入框中的密钥" button removed as per request for auto-processing -->
       </div>
 
-      <div class="instructions-card">
+      <div class="instructions-card"> <!-- Moved instructions card here -->
         <h2 class="title is-5">使用说明</h2>
-        <p><strong>1.</strong> 在上方“密钥列表”文本框中输入或粘贴您的Base32格式密钥，每行一个。支持格式如 <code>密钥</code>、<code>名称:密钥</code> 或 <code>邮箱\t密钥</code> (\t 代表制表符)。</p>
-        <p><strong>2.</strong> 点击“添加输入框中的密钥”按钮或当输入框失去焦点时，系统将自动尝试添加。验证码位数默认为<strong>6位</strong>，令牌周期默认为<strong>30秒</strong>。算法固定为<strong>SHA1</strong>。</p>
+        <p><strong>1.</strong> 在上方“密钥列表”文本框中输入或粘贴您的Base32格式密钥，每行一个。支持格式如 <code>密钥</code>、<code>名称:密钥</code> 或 <code>名称\t密钥</code> (\t 代表制表符)。</p>
+        <p><strong>2.</strong> 密钥粘贴或输入框失去焦点后将自动尝试添加。验证码位数默认为<strong>6位</strong>，令牌周期默认为<strong>30秒</strong>。算法固定为<strong>SHA1</strong>。</p>
         <p><strong>3.</strong> 系统会自动为每个有效密钥生成验证码，并倒计时显示剩余有效时间。</p>
         <p><strong>4.</strong> 点击生成的<strong>数字验证码</strong>即可复制到剪贴板。点击密钥卡片上的<strong>名称</strong>可以进行修改。点击卡片右上角的 <i class="fas fa-times has-text-danger"></i> 图标可直接删除密钥。</p>
         <p><strong>5.</strong> 所有数据均保存在您的浏览器本地，不会上传到任何服务器。</p>
@@ -429,7 +403,7 @@
     </div>
   </section>
 
-  <footer class="page-footer">
+  <footer class="page-footer"> <!-- Standard footer -->
     <div class="container">
       <div class="content has-text-centered">
         <p>Built by <a href="https://hailizi.hkg.email" target="_blank">海蛎子</a></p>
@@ -439,7 +413,7 @@
 
   <script src="js/assets/vue-3.4.20.global.prod.js"></script>
   <script src="js/assets/otpauth-9.1.3.min.js"></script>
-  <script src="js/app.js?v=1.7"></script> <!-- Incremented version -->
+  <script src="js/app.js?v=1.8"></script> <!-- Incremented version -->
   <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </body>
 </html>
