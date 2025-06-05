@@ -34,7 +34,7 @@ const app = Vue.createApp({
       },
       intervalHandle: null,
       toastTimeout: null,
-      inputDebounceTimer: null, 
+      // inputDebounceTimer: null, // Removed as explicit button and blur is preferred
     };
   },
 
@@ -47,7 +47,7 @@ const app = Vue.createApp({
   beforeUnmount: function () {
     clearInterval(this.intervalHandle);
     if (this.toastTimeout) clearTimeout(this.toastTimeout);
-    if (this.inputDebounceTimer) clearTimeout(this.inputDebounceTimer);
+    // if (this.inputDebounceTimer) clearTimeout(this.inputDebounceTimer); // Removed
   },
 
   methods: {
@@ -78,10 +78,10 @@ const app = Vue.createApp({
     },
 
     processBatchInput: function(isFromPaste = false) {
-      const currentInput = this.batchSecretsInput; // Capture current input
+      const currentInput = this.batchSecretsInput; 
       if (!currentInput.trim()) {
-        if (!isFromPaste) { // Only show toast if not from paste, paste is silent
-            // this.showToast("输入框为空。", true); 
+        if (!isFromPaste) { 
+            this.showToast("输入框为空，请输入密钥。", true); 
         }
         return;
       }
@@ -98,31 +98,42 @@ const app = Vue.createApp({
         if (!secretPart) return; 
 
         let parts;
-        // Prioritize Tab for separation, as colon can be part of a name more easily
+        // Try Tab, then Space (multiple spaces possible), then Colon
         if (secretPart.includes('\t')) { 
             parts = secretPart.split('\t');
-        } else if (secretPart.includes(':')) {
-            parts = secretPart.split(/:,(.*)/s); // Split only on the first colon
-             if(parts.length === 1 && secretPart.includes(':')) { // Handle case where split might not work as expected
-                let firstColonIndex = secretPart.indexOf(':');
+        } else {
+            // Try splitting by the last space, assuming key is typically a single block of non-space chars
+            const lastSpaceIndex = secretPart.lastIndexOf(' ');
+            if (lastSpaceIndex > 0 && lastSpaceIndex < secretPart.length -1 ) { // Ensure space is not at start/end
+                // Heuristic: if the part after last space looks like a Base32 key, assume space separation
+                const potentialKey = secretPart.substring(lastSpaceIndex + 1);
+                if (/^[A-Z2-7]+=*$/.test(stripSpaces(potentialKey.toUpperCase()))) {
+                     parts = [secretPart.substring(0, lastSpaceIndex), potentialKey];
+                }
+            }
+            
+            if (!parts && secretPart.includes(':')) { // Fallback to colon if space didn't work or wasn't chosen
+                const firstColonIndex = secretPart.indexOf(':');
                 parts = [secretPart.substring(0, firstColonIndex), secretPart.substring(firstColonIndex + 1)];
             }
         }
 
-
         if (parts && parts.length > 1) {
             name = parts[0].trim(); 
-            secretPart = parts.slice(1).join(secretPart.includes('\t') ? '\t' : ':').trim();
+            secretPart = parts.slice(1).join(secretPart.includes('\t') ? '\t' : (secretPart.includes(' ') ? ' ' : ':')).trim();
         }
 
 
         try {
-          OTPAuth.Secret.fromBase32(stripSpaces(secretPart)); 
+          // Validate the secret part
+          const strippedSecret = stripSpaces(secretPart);
+          if (!strippedSecret) throw new Error("Secret part is empty after stripping spaces.");
+          OTPAuth.Secret.fromBase32(strippedSecret); 
           
           const keyToAdd = {
             id: generateUUID(),
             name: name || `密钥 ${this.keys.length + newKeysToAdd.length + 1}`,
-            secret: stripSpaces(secretPart.toUpperCase()),
+            secret: strippedSecret.toUpperCase(),
             digits: parseInt(this.batchDefaultSettings.digits, 10) || 6,
             period: parseInt(this.batchDefaultSettings.period, 10) || 30,
             algorithm: 'SHA1', 
@@ -132,7 +143,6 @@ const app = Vue.createApp({
             editingNameValue: name || `密钥 ${this.keys.length + newKeysToAdd.length + 1}`,
           };
           newKeysToAdd.push(keyToAdd);
-          // addedCount++; // Increment count after successful push
         } catch (e) {
           failedCount++;
           console.warn(`批量添加失败 (行 ${index + 1}): "${line}". 原因: ${e.message}`);
@@ -143,48 +153,47 @@ const app = Vue.createApp({
         this.keys.push(...newKeysToAdd);
         this.saveKeysToStorage();
         this.updateAllTokens();
-        addedCount = newKeysToAdd.length; // Correctly count added keys
+        addedCount = newKeysToAdd.length; 
       }
       
-      this.batchSecretsInput = ''; // Clear textarea only after processing
+      // Clear the input field only if there was some processing (either success or identified failures)
+      if (addedCount > 0 || failedCount > 0 || currentInput.trim()) {
+         this.batchSecretsInput = ''; 
+      }
       
       let message = '';
       if (addedCount > 0) {
         message += `成功添加 ${addedCount} 个密钥。`;
       }
       if (failedCount > 0) {
-        message += (message ? ' ' : '') + `${failedCount} 个密钥添加失败 (格式无效)。`;
+        message += (message ? ' ' : '') + `${failedCount} 个密钥添加失败 (格式或内容无效)。`;
       }
-      // Only show toast if there was something to process or an error occurred
+      
       if ((addedCount > 0 || failedCount > 0) || (currentInput.trim() && addedCount === 0 && failedCount === 0) ){
-           if (!message) message = "没有新的有效密钥被添加。";
-           this.showToast(message, failedCount > 0 && addedCount === 0);
+           if (!message && currentInput.trim()) message = "没有新的有效密钥被添加。请检查格式。";
+           if (message) this.showToast(message, failedCount > 0 && addedCount === 0);
+      } else if (!currentInput.trim() && !isFromPaste) {
+          // If input was empty and it wasn't a paste event, do nothing (or show a different specific message if needed)
       }
     },
     
     processBatchInputOnBlur: function() {
-        // Process whatever is in the input on blur, unless it's empty
         if (this.batchSecretsInput.trim()) {
             this.processBatchInput(false);
         }
     },
 
-    debounceProcessBatchInput: function() {
-        clearTimeout(this.inputDebounceTimer);
-        // No auto-processing on input, user will use blur or paste
-        // If you want to auto-process after typing stops, uncomment below:
-        // this.inputDebounceTimer = setTimeout(() => {
-        //     this.processBatchInput(false); 
-        // }, 1500); // 1.5s delay after last input
-    },
+    // debounceProcessBatchInput is removed as explicit button and blur is preferred
+    // If needed in future, it can be re-added here, calling processBatchInput.
 
     handlePaste: function(event) {
-        event.preventDefault(); // Prevent default paste behavior
+        // event.preventDefault(); // No longer needed, v-model will update batchSecretsInput
         const pasteData = (event.clipboardData || window.clipboardData).getData('text');
-        this.batchSecretsInput = pasteData; // Manually set textarea value
+        // Manually update the model if needed, or let v-model handle it.
+        // For immediate processing after paste, Vue's reactivity might take a tick.
+        this.batchSecretsInput = pasteData; 
         this.$nextTick(() => { 
-             clearTimeout(this.inputDebounceTimer); 
-             this.processBatchInput(true); // Process immediately on paste
+             this.processBatchInput(true); 
         });
     },
     
@@ -214,7 +223,6 @@ const app = Vue.createApp({
     },
 
     removeKey: function (index) {
-      // Direct delete without confirmation
       const removedKeyName = this.keys[index].name || `密钥 ${index + 1}`;
       this.keys.splice(index, 1);
       this.saveKeysToStorage();
@@ -235,7 +243,7 @@ const app = Vue.createApp({
             const { isEditingName, editingNameValue, ...rest } = k;
             return rest;
         });
-        localStorage.setItem('totpKeys_v5_final', JSON.stringify(keysToSave)); // New storage key
+        localStorage.setItem('totpKeys_v5_2_final', JSON.stringify(keysToSave)); // New storage key
       } catch (e) {
         console.error("Error saving keys to localStorage:", e);
         this.showToast("无法保存密钥到本地存储。", true);
@@ -244,7 +252,7 @@ const app = Vue.createApp({
 
     loadKeysFromStorage: function () {
       try {
-        const storedKeys = localStorage.getItem('totpKeys_v5_final'); // New storage key
+        const storedKeys = localStorage.getItem('totpKeys_v5_2_final'); // New storage key
         if (storedKeys) {
           const parsedKeys = JSON.parse(storedKeys);
           this.keys = parsedKeys.map(key => ({
@@ -260,7 +268,23 @@ const app = Vue.createApp({
             editingNameValue: key.name || '', 
           }));
         } else {
-          // Migration from 'totpKeys_v4_grid_auto'
+          // Migration from 'totpKeys_v5_final' (previous V5 version)
+          const prevV5Keys = localStorage.getItem('totpKeys_v5_final');
+           if (prevV5Keys) {
+            const parsedV5 = JSON.parse(prevV5Keys);
+            this.keys = parsedV5.map(key => ({
+              ...key,
+              id: key.id || generateUUID(),
+              name: key.name || '',
+              isEditingName: false,
+              editingNameValue: key.name || '',
+            }));
+            this.saveKeysToStorage(); // Save in current v5.2 format
+            localStorage.removeItem('totpKeys_v5_final'); // Remove old v5 key
+            this.showToast("密钥已从先前V5版本迁移。");
+            return;
+          }
+          // Add other older migration logic if necessary, e.g. from v4
           const prevV4Keys = localStorage.getItem('totpKeys_v4_grid_auto');
           if (prevV4Keys) {
             const parsedV4 = JSON.parse(prevV4Keys);
@@ -276,7 +300,6 @@ const app = Vue.createApp({
             this.showToast("密钥已从 V4 迁移。");
             return;
           }
-          // Add other older migration logic if necessary
         }
       } catch (e) {
         console.error("Error loading keys from localStorage:", e);
