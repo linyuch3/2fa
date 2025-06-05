@@ -13,12 +13,12 @@
       --secondary-color: #48c774;
       --accent-color: #6c5ce7;
       --text-color: #363636;
-      --bg-color: #f2f7ff;
+      --bg-color: #f8f9fa; /* Slightly simpler background */
       --danger-color: #f14668;
       --danger-dark: #d93058;
       --card-bg: white;
       --card-shadow: 0 6px 25px rgba(0, 0, 0, 0.07);
-      --grid-gap: 1rem; /* Reduced grid gap */
+      --grid-gap: 1rem; 
     }
 
     [v-cloak] {
@@ -29,12 +29,9 @@
       min-height: 100%;
       font-family: 'Roboto', sans-serif;
       background-color: var(--bg-color);
-      background-image:
-        radial-gradient(circle at 10% 20%, rgba(100, 130, 255, 0.07) 0%, rgba(100, 130, 255, 0) 50%),
-        radial-gradient(circle at 90% 80%, rgba(100, 200, 255, 0.05) 0%, rgba(100, 200, 255, 0) 70%),
-        linear-gradient(135deg, #f2f7ff 0%, #edf3ff 100%);
+      /* Removed complex background-image for simplicity */
       overflow-x: hidden;
-      padding-bottom: 2rem; /* Normal page flow */
+      padding-bottom: 2rem; 
     }
 
     .container {
@@ -42,7 +39,7 @@
       margin-top: 1.5rem;
       margin-bottom: 1.5rem;
       z-index: 1;
-      max-width: 1200px !important; /* Wider container for more cards */
+      max-width: 1200px !important; 
     }
     
     .title {
@@ -68,7 +65,7 @@
       background-color: rgba(255, 255, 255, 0.9);
     }
     .textarea {
-        min-height: 8em; /* Adjusted height */
+        min-height: 8em; 
         height: auto;
         padding: 1rem;
     }
@@ -80,7 +77,7 @@
     }
     
     .progress {
-      height: 6px; /* Slimmer progress bar */
+      height: 6px; 
       border-radius: 3px;
       overflow: hidden;
       margin-top: 0.35rem; 
@@ -97,49 +94,40 @@
       animation: progressAnimation 1.2s linear infinite;
       transition: width 0.3s ease-out;
     }
-    /* Removing gradient from progress for cleaner look */
 
-    @keyframes progressAnimation { /* Keep for potential future use */
+    @keyframes progressAnimation { 
       0% { background-position: 1.2rem 0; }
       100% { background-position: 0 0; }
     }
 
     .keys-grid {
         display: grid;
-        /* Try to fit 5 items: 100% / 5 = 20%. Subtract gap. */
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); /* Smaller minmax for more items */
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Adjusted minmax for ~5 items if container is wide enough */
         gap: var(--grid-gap);
         margin-bottom: 2rem;
     }
 
     .key-entry-card {
       background: var(--card-bg);
-      border-radius: 10px; /* Slightly smaller radius */
+      border-radius: 10px; 
       box-shadow: var(--card-shadow);
       display: flex;
       flex-direction: column;
       transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-      position: relative; /* For absolute positioning of delete button */
-      padding: 1rem; /* Reduced padding */
+      position: relative; 
+      padding: 1rem; 
     }
     .key-entry-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 20px rgba(0,0,0,0.08);
     }
 
-    .card-content { /* No longer used directly on key-entry-card, but kept for potential future components */
-        padding: 1rem; 
-        flex-grow: 1; 
-        display: flex;
-        flex-direction: column;
-    }
-
     .token {
-      font-size: 2rem; /* Smaller token */
+      font-size: 1.8rem; /* Slightly smaller for denser grid */
       font-weight: 700;
-      letter-spacing: 2px; /* Reduced spacing */
-      margin: 0.3rem 0 0.5rem 0; 
-      padding: 0.3rem 0;
+      letter-spacing: 2px; 
+      margin: 0.2rem 0 0.4rem 0; 
+      padding: 0.2rem 0;
       background-image: linear-gradient(135deg, var(--primary-color), var(--accent-color));
       -webkit-background-clip: text;
       background-clip: text;
@@ -159,24 +147,24 @@
     }
 
     .delete-button {
-      background-color: rgba(200, 50, 50, 0.1); /* Lighter, less obtrusive */
+      background-color: rgba(200, 50, 50, 0.1); 
       color: var(--danger-color);
       border: 1px solid rgba(200, 50, 50, 0.2);
       border-radius: 50%; 
-      width: 28px; /* Smaller */
-      height: 28px;
+      width: 26px; /* Smaller delete button */
+      height: 26px;
       padding: 0;
       transition: all 0.2s;
       position: absolute;
-      top: 8px; /* Adjusted position */
-      right: 8px;
+      top: 6px; 
+      right: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
-      opacity: 0.6; /* Less prominent initially */
+      opacity: 0.6; 
     }
     .key-entry-card:hover .delete-button {
-        opacity: 1; /* Show on hover */
+        opacity: 1; 
     }
     .delete-button:hover {
       background-color: var(--danger-color);
@@ -186,10 +174,10 @@
     }
     .delete-button .icon {
         margin: 0;
-        font-size: 0.7rem; /* Smaller icon */
+        font-size: 0.6rem; /* Smaller icon */
     }
     
-    .button.is-primary, .button.is-success, .button.is-danger { /* Added is-danger */
+    .button.is-primary, .button.is-success, .button.is-danger { 
         border-radius: 8px; 
         font-weight: 500;
         padding: 0.75rem 1.5rem; 
@@ -258,36 +246,36 @@
     }
 
     .key-name-display {
-        font-weight: 500; /* Less bold */
+        font-weight: 500; 
         color: var(--text-color);
-        margin-bottom: 0.25rem; 
-        font-size: 1rem; /* Smaller name */
+        margin-bottom: 0.2rem; 
+        font-size: 0.9rem; /* Smaller name in card */
         cursor: pointer;
         display: inline-block; 
-        padding: 0.1rem 0.3rem;
+        padding: 0.1rem 0.2rem;
         border-radius: 4px;
         transition: background-color 0.2s;
-        line-height: 1.3;
-        word-break: break-word; /* Allow name to wrap */
+        line-height: 1.2;
+        word-break: break-word; 
     }
     .key-name-display:hover {
         background-color: #f0f0f0;
     }
     .key-name-input {
-        font-size: 1rem; /* Consistent with display */
+        font-size: 0.9rem; 
         font-weight: 500;
         padding: 0.2rem 0.4rem;
         border: 1px solid var(--primary-color);
         border-radius: 4px;
-        width: 100%; /* Full width for editing */
+        width: 100%; 
         margin-bottom: 0.25rem;
     }
     .secret-key-display {
-        font-size: 0.75rem; /* Smaller secret */
-        color: #7a7a7a;
+        font-size: 0.7rem; /* Even smaller secret preview */
+        color: #aaa; /* Lighter color for secret */
         word-break: break-all;
-        margin-bottom: 0.75rem; 
-        line-height: 1.2;
+        margin-bottom: 0.5rem; 
+        line-height: 1.1;
     }
     .no-keys-message {
         text-align: center;
@@ -303,9 +291,9 @@
       margin-bottom: 0.5rem;
     }
     
-    .page-footer { /* For normal flow footer */
+    .page-footer { 
         padding: 2rem 1.5rem;
-        background-color: transparent; /* Or a subtle color */
+        background-color: transparent; 
         text-align: center;
         margin-top: 2rem;
     }
@@ -346,18 +334,17 @@
       <h1 class="title is-3 has-text-centered">多账户 2FA 验证码</h1>
 
       <div class="actions-bar">
-          <button v-if="keys.length > 0" class="button is-danger is-small" @click="clearAllKeysWithConfirmation">
+          <button v-if="keys.length > 0" class="button is-danger is-outlined is-small" @click="clearAllKeysWithConfirmation">
             <span class="icon is-small"><i class="fas fa-trash-alt"></i></span>
             <span>清空所有密钥</span>
           </button>
       </div>
 
-      <!-- 密钥列表 - 网格布局 -->
       <div v-if="keys.length > 0" class="keys-grid">
         <div v-for="(keyEntry, index) in keys" :key="keyEntry.id" class="key-entry-card">
-            <button class="button is-small delete-button" @click="removeKey(index)">
+            <button class="button is-small delete-button" @click="removeKey(index)" title="删除密钥">
               <span class="icon is-small">
-                <i class="fas fa-times"></i> <!-- Changed to X icon -->
+                <i class="fas fa-times"></i>
               </span>
             </button>
             <div v-if="!keyEntry.isEditingName" class="key-name-display" @click="startEditKeyName(keyEntry, index)">
@@ -369,7 +356,7 @@
             <input v-else
                    :id="'name-input-' + keyEntry.id"
                    type="text"
-                   class="input key-name-input mb-1" 
+                   class="input is-small key-name-input mb-1" 
                    v-model="keyEntry.editingNameValue"
                    @keyup.enter="saveKeyName(keyEntry)"
                    @blur="saveKeyName(keyEntry)"
@@ -389,21 +376,18 @@
         <p>请在下方文本框中粘贴您的密钥 (每行一个)。</p>
       </div>
 
-
-      <!-- 批量添加密钥的表单 -->
       <div class="box add-key-section mt-5">
         <h2 class="title is-4 has-text-centered mb-4">添加/更新密钥</h2>
         <div class="field">
-          <label class="label">密钥列表 (每行一个，粘贴后自动添加)</label>
+          <label class="label">密钥列表 (每行一个)</label>
           <div class="control">
             <textarea class="textarea" 
                       v-model="batchSecretsInput" 
-                      @paste="handlePaste" 
-                      @blur="processBatchInput"
-                      placeholder="BCLQ5FLW3TLOTUXK&#10;X3ID2JRHA6H53JIR (可带名称，如：Google:X3ID2JRHA6H53JIR)&#10;G6RYBUGRDCS74LD4" 
+                      @input="debounceProcessBatchInput"
+                      placeholder="BCLQ5FLW3TLOTUXK&#10;anthonywright@stu.sicau.edu.cn	X3ID2JRHA6H53JIR&#10;Google:G6RYBUGRDCS74LD4" 
                       rows="5"></textarea>
           </div>
-          <p class="help">名称将自动生成或从行内解析(格式：名称:密钥)。位数(默认6)和周期(默认30)使用默认值。算法固定为SHA1。</p>
+          <p class="help">支持格式：<code>密钥</code>, <code>名称:密钥</code>, <code>邮箱\t密钥</code>。位数(默认6)和周期(默认30)使用默认值。算法固定为SHA1。</p>
         </div>
          <div class="columns is-mobile">
           <div class="column">
@@ -423,14 +407,20 @@
             </div>
           </div>
         </div>
-        <!-- 批量添加按钮已移除 -->
+        <div class="field has-text-centered mt-4">
+            <button class="button is-success is-fullwidth" @click="processBatchInput" :disabled="!batchSecretsInput.trim()">
+              <span class="icon">
+                  <i class="fas fa-plus-circle"></i>
+              </span>
+              <span>添加输入框中的密钥</span>
+            </button>
+          </div>
       </div>
 
-      <!-- Instructions Card -->
       <div class="instructions-card">
         <h2 class="title is-5">使用说明</h2>
-        <p><strong>1.</strong> 在上方“密钥列表”文本框中输入或粘贴您的Base32格式密钥，每行一个。支持格式如 <code>密钥</code> 或 <code>名称:密钥</code>。</p>
-        <p><strong>2.</strong> 密钥粘贴或输入框失去焦点后将自动尝试添加。验证码位数默认为<strong>6位</strong>，令牌周期默认为<strong>30秒</strong>。算法固定为<strong>SHA1</strong>。</p>
+        <p><strong>1.</strong> 在上方“密钥列表”文本框中输入或粘贴您的Base32格式密钥，每行一个。支持格式如 <code>密钥</code>、<code>名称:密钥</code> 或 <code>邮箱\t密钥</code> (\t 代表制表符)。</p>
+        <p><strong>2.</strong> 点击“添加输入框中的密钥”按钮或当输入框失去焦点时，系统将自动尝试添加。验证码位数默认为<strong>6位</strong>，令牌周期默认为<strong>30秒</strong>。算法固定为<strong>SHA1</strong>。</p>
         <p><strong>3.</strong> 系统会自动为每个有效密钥生成验证码，并倒计时显示剩余有效时间。</p>
         <p><strong>4.</strong> 点击生成的<strong>数字验证码</strong>即可复制到剪贴板。点击密钥卡片上的<strong>名称</strong>可以进行修改。点击卡片右上角的 <i class="fas fa-times has-text-danger"></i> 图标可直接删除密钥。</p>
         <p><strong>5.</strong> 所有数据均保存在您的浏览器本地，不会上传到任何服务器。</p>
@@ -449,7 +439,7 @@
 
   <script src="js/assets/vue-3.4.20.global.prod.js"></script>
   <script src="js/assets/otpauth-9.1.3.min.js"></script>
-  <script src="js/app.js?v=1.6"></script> <!-- Incremented version -->
+  <script src="js/app.js?v=1.7"></script> <!-- Incremented version -->
   <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </body>
 </html>
