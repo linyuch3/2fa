@@ -18,7 +18,7 @@
       --danger-dark: #d93058;
       --card-bg: white;
       --card-shadow: 0 6px 25px rgba(0, 0, 0, 0.07);
-      --grid-gap: 0.75rem; /* Slightly reduced gap for denser layout */
+      --grid-gap: 0.75rem; 
     }
 
     [v-cloak] {
@@ -64,7 +64,7 @@
       background-color: rgba(255, 255, 255, 0.9);
     }
     .textarea {
-        min-height: 7em; /* Adjusted height */
+        min-height: 7em; 
         height: auto;
         padding: 1rem;
     }
@@ -76,7 +76,7 @@
     }
     
     .progress {
-      height: 5px; /* Slimmer progress bar */
+      height: 5px; 
       border-radius: 2.5px;
       overflow: hidden;
       margin-top: 0.25rem; 
@@ -94,8 +94,7 @@
 
     .keys-grid {
         display: grid;
-        /* Aim for ~5 items: 100% / 5 = 20%. With gap, min value should be smaller */
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); /* Smaller min for more items */
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Adjusted minmax for ~5+ items */
         gap: var(--grid-gap);
         margin-bottom: 2rem;
     }
@@ -108,7 +107,7 @@
       flex-direction: column;
       transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
       position: relative; 
-      padding: 0.8rem; /* Reduced padding for smaller cards */
+      padding: 0.8rem; 
     }
     .key-entry-card:hover {
         transform: translateY(-2px);
@@ -116,7 +115,7 @@
     }
 
     .token {
-      font-size: 1.6rem; /* Smaller token for smaller cards */
+      font-size: 1.6rem; 
       font-weight: 700;
       letter-spacing: 1.5px; 
       margin: 0.1rem 0 0.2rem 0; 
@@ -160,7 +159,7 @@
         opacity: 1; 
     }
     .delete-button:hover {
-      background-color: rgba(241, 70, 104, 0.15); /* Lighter hover for direct delete */
+      background-color: rgba(241, 70, 104, 0.15); 
       color: var(--danger-dark);
       transform: scale(1.1);
     }
@@ -175,7 +174,7 @@
         padding: 0.75rem 1.5rem; 
         transition: all 0.2s ease-out;
     }
-     .button.is-danger.is-outlined { /* Style for outlined danger button */
+     .button.is-danger.is-outlined { 
         border-color: var(--danger-color);
         color: var(--danger-color);
      }
@@ -183,6 +182,15 @@
         background-color: var(--danger-color);
         color: white;
      }
+    .button.is-success {
+        background-color: var(--secondary-color);
+        box-shadow: 0 4px 12px rgba(72, 199, 116, 0.2);
+    }
+    .button.is-success:hover {
+        background-color: #3db865;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(72, 199, 116, 0.3);
+    }
 
 
     .toast {
@@ -225,13 +233,13 @@
         margin-bottom: 0.1rem; 
         font-size: 0.85rem; 
         cursor: pointer;
-        display: block; /* Make it block to take full width for easier click */
+        display: block; 
         padding: 0.1rem 0.2rem;
         border-radius: 3px;
         transition: background-color 0.2s;
         line-height: 1.2;
         word-break: break-word; 
-        text-align: center; /* Center the name */
+        text-align: center; 
     }
     .key-name-display:hover {
         background-color: #f0f0f0;
@@ -244,7 +252,7 @@
         border-radius: 4px;
         width: 100%; 
         margin-bottom: 0.25rem;
-        box-sizing: border-box; /* Ensure padding doesn't make it overflow */
+        box-sizing: border-box; 
     }
     .secret-key-display {
         font-size: 0.65rem; 
@@ -252,8 +260,8 @@
         word-break: break-all;
         margin-bottom: 0.3rem; 
         line-height: 1.1;
-        text-align: center; /* Center the secret preview */
-        height: 2.2em; /* Attempt to reserve space for two lines */
+        text-align: center; 
+        height: 2.2em; 
         overflow: hidden;
     }
     .no-keys-message {
@@ -300,7 +308,7 @@
     .actions-bar {
         display: flex;
         justify-content: flex-end;
-        margin-bottom: 1rem; /* Reduced margin */
+        margin-bottom: 1rem; 
     }
   </style>
 </head>
@@ -345,7 +353,7 @@
               <span class="has-text-grey is-size-7">{{ keyEntry.updatingIn }} 秒后更新</span>
               <progress class="progress is-info is-small" :value="keyEntry.updatingIn" :max="keyEntry.period"></progress>
             </div>
-            <p class="title is-5 token" :class="{ 'pulse': keyEntry.updatingIn <= 5 }" :id="'token-' + keyEntry.id" @click="copyToken(keyEntry.token, keyEntry.id)"> <!-- Changed to is-5 for smaller token -->
+            <p class="title is-5 token" :class="{ 'pulse': keyEntry.updatingIn <= 5 }" :id="'token-' + keyEntry.id" @click="copyToken(keyEntry.token, keyEntry.id)"> 
               {{ keyEntry.token }}
             </p>
         </div>
@@ -358,17 +366,16 @@
       <div class="box add-key-section mt-5">
         <h2 class="title is-4 has-text-centered mb-4">添加密钥</h2>
         <div class="field">
-          <label class="label">密钥列表 (每行一个, 粘贴或输入后自动处理)</label>
+          <label class="label">密钥列表 (每行一个)</label>
           <div class="control">
             <textarea class="textarea" 
                       v-model="batchSecretsInput" 
                       @paste.prevent="handlePaste" 
                       @blur="processBatchInputOnBlur"
-                      @input="debounceProcessBatchInput"
-                      placeholder="BCLQ5FLW3TLOTUXK&#10;anthonywright@stu.sicau.edu.cn	X3ID2JRHA6H53JIR&#10;Google:G6RYBUGRDCS74LD4" 
+                      placeholder="BCLQ5FLW3TLOTUXK&#10;anthonywright@stu.sicau.edu.cn	X3ID2JRHA6H53JIR&#10;Google:G6RYBUGRDCS74LD4&#10;my-service BCLQ5FLW3TLOTUXK" 
                       rows="5"></textarea>
           </div>
-          <p class="help">支持格式：<code>密钥</code>, <code>名称:密钥</code>, <code>名称\t密钥</code>。位数(默认6)和周期(默认30)使用默认值。算法固定为SHA1。</p>
+          <p class="help">支持格式：<code>密钥</code>, <code>名称:密钥</code>, <code>名称\t密钥</code>, <code>名称<空格>密钥</code>。位数(默认6)和周期(默认30)使用默认值。算法固定为SHA1。</p>
         </div>
          <div class="columns is-mobile">
           <div class="column">
@@ -388,13 +395,20 @@
             </div>
           </div>
         </div>
-        <!-- "添加输入框中的密钥" button removed as per request for auto-processing -->
+        <div class="field has-text-centered mt-4">
+            <button class="button is-success is-fullwidth" @click="processBatchInput(false)" :disabled="!batchSecretsInput.trim()">
+              <span class="icon">
+                  <i class="fas fa-plus-circle"></i>
+              </span>
+              <span>添加输入框中的密钥</span>
+            </button>
+        </div>
       </div>
 
-      <div class="instructions-card"> <!-- Moved instructions card here -->
+      <div class="instructions-card"> 
         <h2 class="title is-5">使用说明</h2>
-        <p><strong>1.</strong> 在上方“密钥列表”文本框中输入或粘贴您的Base32格式密钥，每行一个。支持格式如 <code>密钥</code>、<code>名称:密钥</code> 或 <code>名称\t密钥</code> (\t 代表制表符)。</p>
-        <p><strong>2.</strong> 密钥粘贴或输入框失去焦点后将自动尝试添加。验证码位数默认为<strong>6位</strong>，令牌周期默认为<strong>30秒</strong>。算法固定为<strong>SHA1</strong>。</p>
+        <p><strong>1.</strong> 在上方“密钥列表”文本框中输入或粘贴您的Base32格式密钥，每行一个。支持格式如 <code>密钥</code>、<code>名称:密钥</code>、<code>名称\t密钥</code> (\t 代表制表符) 或 <code>名称<空格>密钥</code>。</p>
+        <p><strong>2.</strong> 点击“添加输入框中的密钥”按钮，或当输入框失去焦点时，系统将自动尝试添加。验证码位数默认为<strong>6位</strong>，令牌周期默认为<strong>30秒</strong>。算法固定为<strong>SHA1</strong>。</p>
         <p><strong>3.</strong> 系统会自动为每个有效密钥生成验证码，并倒计时显示剩余有效时间。</p>
         <p><strong>4.</strong> 点击生成的<strong>数字验证码</strong>即可复制到剪贴板。点击密钥卡片上的<strong>名称</strong>可以进行修改。点击卡片右上角的 <i class="fas fa-times has-text-danger"></i> 图标可直接删除密钥。</p>
         <p><strong>5.</strong> 所有数据均保存在您的浏览器本地，不会上传到任何服务器。</p>
@@ -403,7 +417,7 @@
     </div>
   </section>
 
-  <footer class="page-footer"> <!-- Standard footer -->
+  <footer class="page-footer"> 
     <div class="container">
       <div class="content has-text-centered">
         <p>Built by <a href="https://hailizi.hkg.email" target="_blank">海蛎子</a></p>
@@ -413,7 +427,7 @@
 
   <script src="js/assets/vue-3.4.20.global.prod.js"></script>
   <script src="js/assets/otpauth-9.1.3.min.js"></script>
-  <script src="js/app.js?v=1.8"></script> <!-- Incremented version -->
+  <script src="js/app.js?v=1.9"></script> <!-- Incremented version -->
   <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </body>
 </html>
