@@ -94,7 +94,7 @@
 
     .keys-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Adjusted minmax for ~5+ items */
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
         gap: var(--grid-gap);
         margin-bottom: 2rem;
     }
@@ -139,28 +139,29 @@
     }
 
     .delete-button {
-      background-color: transparent; 
-      color: var(--danger-color);
+      background-color: var(--danger-color); /* More visible background */
+      color: white; /* White icon for better contrast */
       border: none;
       border-radius: 50%; 
-      width: 24px; 
-      height: 24px;
+      width: 26px; 
+      height: 26px;
       padding: 0;
       transition: all 0.2s;
       position: absolute;
-      top: 5px; 
-      right: 5px;
+      top: 8px; /* Adjusted for visibility */
+      right: 8px; /* Adjusted for visibility */
       display: flex;
       align-items: center;
       justify-content: center;
-      opacity: 0.5; 
+      opacity: 0.7; /* Initial opacity */
+      z-index: 5; /* Ensure it's above other elements if overlap occurs */
     }
     .key-entry-card:hover .delete-button {
         opacity: 1; 
     }
     .delete-button:hover {
-      background-color: rgba(241, 70, 104, 0.15); 
-      color: var(--danger-dark);
+      background-color: var(--danger-dark); /* Darker on hover */
+      color: white;
       transform: scale(1.1);
     }
     .delete-button .icon {
@@ -191,7 +192,6 @@
         transform: translateY(-2px);
         box-shadow: 0 6px 16px rgba(72, 199, 116, 0.3);
     }
-
 
     .toast {
       position: fixed;
@@ -431,3 +431,4 @@
   <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </body>
 </html>
+
