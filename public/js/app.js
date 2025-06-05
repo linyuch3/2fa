@@ -1,4 +1,4 @@
-// Helper functions (remains mostly the same)
+// Helper functions
 function getCurrentSeconds() {
   return Math.round(new Date().getTime() / 1000.0);
 }
@@ -16,7 +16,6 @@ function truncateTo(str, digits) {
   return str.slice(-digits);
 }
 
-// UUID generator for unique key IDs
 function generateUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -24,21 +23,19 @@ function generateUUID() {
   });
 }
 
-
 const app = Vue.createApp({
   data() {
     return {
-      keys: [], // Array to store multiple key entries
-      // newKey (for single add) is removed as per request
-      batchSecretsInput: '', // For the textarea input
-      batchDefaultSettings: { // Default settings for batch adding
+      keys: [], 
+      batchSecretsInput: '', 
+      batchDefaultSettings: { 
         digits: 6,
         period: 30,
-        algorithm: 'SHA1', // Algorithm is now fixed to SHA1 for batch add
+        // Algorithm is fixed to SHA1, no longer in settings for batch UI
       },
-      // activeTab is removed as single add is removed
       intervalHandle: null,
       toastTimeout: null,
+      pasteTimeout: null, // For debouncing paste/input processing
     };
   },
 
@@ -51,6 +48,7 @@ const app = Vue.createApp({
   beforeUnmount: function () {
     clearInterval(this.intervalHandle);
     if (this.toastTimeout) clearTimeout(this.toastTimeout);
+    if (this.pasteTimeout) clearTimeout(this.pasteTimeout);
   },
 
   methods: {
@@ -59,38 +57,46 @@ const app = Vue.createApp({
         try {
           if (!keyEntry.secret || stripSpaces(keyEntry.secret).length === 0) {
             keyEntry.token = "密钥无效";
-            keyEntry.updatingIn = (keyEntry.period || 30);
+            keyEntry.updatingIn = (parseInt(keyEntry.period, 10) || 30);
             return; 
           }
           const totp = new OTPAuth.TOTP({
             issuer: keyEntry.name || '',
             label: 'OTPAuth:' + (keyEntry.name || keyEntry.secret.substring(0,6)),
-            algorithm: keyEntry.algorithm || 'SHA1', // Use key's own algorithm or default to SHA1
+            algorithm: 'SHA1', // Algorithm is fixed
             digits: parseInt(keyEntry.digits, 10) || 6,
             period: parseInt(keyEntry.period, 10) || 30,
             secret: OTPAuth.Secret.fromBase32(stripSpaces(keyEntry.secret)),
           });
           keyEntry.token = truncateTo(totp.generate(), keyEntry.digits || 6);
-          keyEntry.updatingIn = (keyEntry.period || 30) - (getCurrentSeconds() % (keyEntry.period || 30));
+          keyEntry.updatingIn = (parseInt(keyEntry.period, 10) || 30) - (getCurrentSeconds() % (parseInt(keyEntry.period, 10) || 30));
         } catch (error) {
           console.error("Error generating token for key:", keyEntry.name || keyEntry.secret, error);
-          keyEntry.token = "错误";
-          keyEntry.updatingIn = (keyEntry.period || 30);
+          keyEntry.token = "格式错误"; // More specific error for bad secret during generation
+          keyEntry.updatingIn = (parseInt(keyEntry.period, 10) || 30);
         }
       });
     },
 
-    // addKey method is removed as per request (only batch add remains)
+    processBatchInput: function() {
+      if (!this.batchSecretsInput.trim()) return; // Do nothing if input is empty
 
-    addKeysInBatch: function() {
       const secrets = this.batchSecretsInput.split('\n');
       let addedCount = 0;
       let failedCount = 0;
+      let newKeysToAdd = [];
 
       secrets.forEach((secretLine, index) => {
-        const secretTrimmed = secretLine.trim();
-        if (!secretTrimmed) {
-          return; // Skip empty lines
+        let name = '';
+        let secretTrimmed = secretLine.trim();
+        
+        if (!secretTrimmed) return; // Skip empty lines
+
+        // Try to parse "Name:Secret" format
+        const parts = secretTrimmed.split(':');
+        if (parts.length > 1) {
+            name = parts.shift().trim(); // Everything before the first colon is name
+            secretTrimmed = parts.join(':').trim(); // The rest is secret
         }
 
         try {
@@ -98,86 +104,103 @@ const app = Vue.createApp({
           
           const keyToAdd = {
             id: generateUUID(),
-            name: `密钥 ${this.keys.length + addedCount + 1}`, // Auto-generate name
+            name: name || `密钥 ${this.keys.length + newKeysToAdd.length + 1}`,
             secret: stripSpaces(secretTrimmed.toUpperCase()),
             digits: parseInt(this.batchDefaultSettings.digits, 10) || 6,
             period: parseInt(this.batchDefaultSettings.period, 10) || 30,
-            algorithm: 'SHA1', // Algorithm fixed to SHA1 for batch add
+            algorithm: 'SHA1', 
             token: '',
             updatingIn: 0,
-            isEditingName: false, // For inline name editing
-            editingNameValue: '', // For inline name editing
+            isEditingName: false, 
+            editingNameValue: name || `密钥 ${this.keys.length + newKeysToAdd.length + 1}`,
           };
-          this.keys.push(keyToAdd);
+          newKeysToAdd.push(keyToAdd);
           addedCount++;
         } catch (e) {
           failedCount++;
-          console.warn(`批量添加失败 (行 ${index + 1}): "${secretTrimmed}". 原因: ${e.message}`);
+          console.warn(`批量添加失败 (行 ${index + 1}): "${secretLine}". 原因: ${e.message}`);
         }
       });
 
-      if (addedCount > 0) {
+      if (newKeysToAdd.length > 0) {
+        this.keys.push(...newKeysToAdd);
         this.saveKeysToStorage();
         this.updateAllTokens();
       }
 
-      this.batchSecretsInput = ''; 
+      this.batchSecretsInput = ''; // Clear textarea
       
       let message = '';
       if (addedCount > 0) {
         message += `成功添加 ${addedCount} 个密钥。`;
       }
       if (failedCount > 0) {
-        message += (message ? ' ' : '') + `${failedCount} 个密钥添加失败 (格式无效)。`;
+        message += (message ? ' ' : '') + `${failedCount} 个密钥添加失败 (格式无效/重复)。`;
       }
-      if (!message) {
-        message = "没有输入有效密钥。";
+      if (!message && secrets.some(s => s.trim())) { // If there was input but nothing was processed
+        message = "没有输入有效密钥或所有密钥均已存在。";
+      } else if (!message) {
+        return; // No input, no message
       }
       this.showToast(message, failedCount > 0 && addedCount === 0);
     },
+
+    handlePaste: function(event) {
+        // Process on next tick to allow textarea to update
+        this.$nextTick(() => {
+            this.processBatchInput();
+        });
+    },
     
     startEditKeyName: function(keyEntry, index) {
-      this.keys.forEach(k => k.isEditingName = false); // Close other editing inputs
+      this.keys.forEach((k, i) => { // Save any other currently editing name
+        if (k.isEditingName && i !== index) {
+            this.saveKeyName(k);
+        }
+        k.isEditingName = (i === index);
+      });
       keyEntry.editingNameValue = keyEntry.name;
-      keyEntry.isEditingName = true;
-      this.$nextTick(() => { // Wait for DOM update
+      this.$nextTick(() => { 
         const inputEl = document.getElementById('name-input-' + keyEntry.id);
         if (inputEl) {
           inputEl.focus();
+          inputEl.select();
         }
       });
     },
 
     saveKeyName: function(keyEntry) {
-      if (keyEntry.isEditingName) { // Only save if it was actually in editing mode
+      if (keyEntry.isEditingName) { 
         keyEntry.name = keyEntry.editingNameValue.trim();
         keyEntry.isEditingName = false;
         this.saveKeysToStorage();
-        this.showToast("名称已更新。");
+        // No toast on save, to reduce noise
       }
     },
 
     removeKey: function (index) {
-      const keyToConfirm = this.keys[index];
-      // Using a custom modal for confirm is better. For now, window.confirm
-      const userName = keyToConfirm.name || `密钥 ${index + 1}`;
-      if (window.confirm(`确定要删除密钥 "${userName}" (${keyToConfirm.secret.substring(0,10)}...) 吗? 这将从本地存储中移除它。`)) {
-        this.keys.splice(index, 1);
-        this.saveKeysToStorage();
-        this.showToast("密钥已删除。");
-      }
+      // No confirmation as per request
+      const removedKeyName = this.keys[index].name || `密钥 ${index + 1}`;
+      this.keys.splice(index, 1);
+      this.saveKeysToStorage();
+      this.showToast(`密钥 "${removedKeyName}" 已删除。`);
     },
 
-    // resetNewKeyForm is removed as single add is removed
+    clearAllKeysWithConfirmation: function() {
+        if (window.confirm("确定要清空所有密钥吗？此操作不可撤销！")) {
+            this.keys = [];
+            this.saveKeysToStorage();
+            this.showToast("所有密钥已清空。");
+        }
+    },
 
     saveKeysToStorage: function () {
       try {
-        // Before saving, remove temporary editing state properties
         const keysToSave = this.keys.map(k => {
             const { isEditingName, editingNameValue, ...rest } = k;
             return rest;
         });
-        localStorage.setItem('totpKeys_v2_grid', JSON.stringify(keysToSave)); // Changed storage key
+        localStorage.setItem('totpKeys_v3_grid_auto', JSON.stringify(keysToSave)); // New storage key
       } catch (e) {
         console.error("Error saving keys to localStorage:", e);
         this.showToast("无法保存密钥到本地存储。", true);
@@ -186,7 +209,7 @@ const app = Vue.createApp({
 
     loadKeysFromStorage: function () {
       try {
-        const storedKeys = localStorage.getItem('totpKeys_v2_grid'); // Changed storage key
+        const storedKeys = localStorage.getItem('totpKeys_v3_grid_auto'); // New storage key
         if (storedKeys) {
           const parsedKeys = JSON.parse(storedKeys);
           this.keys = parsedKeys.map(key => ({
@@ -198,10 +221,27 @@ const app = Vue.createApp({
             algorithm: key.algorithm || 'SHA1',
             token: '', 
             updatingIn: 0,
-            isEditingName: false, // Initialize editing state
-            editingNameValue: key.name || '', // Initialize editing value
+            isEditingName: false, 
+            editingNameValue: key.name || '', 
           }));
         } else {
+          // Attempt to migrate from 'totpKeys_v2_grid' (previous grid version)
+          const prevGridKeys = localStorage.getItem('totpKeys_v2_grid');
+          if (prevGridKeys) {
+            const parsedOldGrid = JSON.parse(prevGridKeys);
+            this.keys = parsedOldGrid.map(key => ({
+              ...key, // Spread existing properties
+              id: key.id || generateUUID(),
+              name: key.name || '',
+              isEditingName: false,
+              editingNameValue: key.name || '',
+            }));
+            this.saveKeysToStorage(); // Save in new format
+            localStorage.removeItem('totpKeys_v2_grid');
+            this.showToast("密钥已迁移到最新格式。");
+            return;
+          }
+
           // Migration from totpKeys_v2 (previous multi-key, non-grid version)
           const oldMultiStoredKeys = localStorage.getItem('totpKeys_v2');
           if (oldMultiStoredKeys) {
@@ -218,13 +258,12 @@ const app = Vue.createApp({
                 isEditingName: false,
                 editingNameValue: key.name || '',
               }));
-              this.saveKeysToStorage(); // Save in new format
-              localStorage.removeItem('totpKeys_v2'); // Remove old multi-key storage
-              this.showToast("密钥已迁移到新布局格式。");
-              return; // Exit after migration
+              this.saveKeysToStorage(); 
+              localStorage.removeItem('totpKeys_v2'); 
+              this.showToast("旧版多密钥已迁移。");
+              return; 
           }
           
-          // Migration from original single key format
           const oldSingleSecret = localStorage.getItem('totp_secret_key');
           if (oldSingleSecret) {
             this.keys.push({
@@ -255,7 +294,7 @@ const app = Vue.createApp({
     },
 
     copyToken: function (token, keyId) {
-      if (!token || token === "错误" || token === "密钥无效") {
+      if (!token || token === "错误" || token === "密钥无效" || token === "格式错误") {
         this.showToast("无法复制无效的验证码！", true);
         return;
       }
@@ -266,19 +305,13 @@ const app = Vue.createApp({
         try {
             const textArea = document.createElement("textarea");
             textArea.value = token;
-            textArea.style.position = "fixed";
-            textArea.style.top = "0";
-            textArea.style.left = "0";
-            textArea.style.width = "2em";
-            textArea.style.height = "2em";
-            textArea.style.padding = "0";
-            textArea.style.border = "none";
-            textArea.style.outline = "none";
-            textArea.style.boxShadow = "none";
+            textArea.style.position = "fixed"; textArea.style.top = "0"; textArea.style.left = "0";
+            textArea.style.width = "2em"; textArea.style.height = "2em";
+            textArea.style.padding = "0"; textArea.style.border = "none";
+            textArea.style.outline = "none"; textArea.style.boxShadow = "none";
             textArea.style.background = "transparent";
             document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
+            textArea.focus(); textArea.select();
             document.execCommand('copy');
             document.body.removeChild(textArea);
             this.showToast(`验证码 "${token}" 已复制 (备用方法)!`);
