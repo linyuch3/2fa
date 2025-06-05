@@ -34,7 +34,7 @@ const app = Vue.createApp({
       },
       intervalHandle: null,
       toastTimeout: null,
-      inputDebounceTimer: null, // For debouncing textarea input
+      inputDebounceTimer: null, 
     };
   },
 
@@ -77,13 +77,16 @@ const app = Vue.createApp({
       });
     },
 
-    processBatchInput: function() {
-      if (!this.batchSecretsInput.trim()) {
-        // this.showToast("输入框为空。", true); // Optional: notify if input is empty on explicit button click
+    processBatchInput: function(isFromPaste = false) {
+      const currentInput = this.batchSecretsInput; // Capture current input
+      if (!currentInput.trim()) {
+        if (!isFromPaste) { // Only show toast if not from paste, paste is silent
+            // this.showToast("输入框为空。", true); 
+        }
         return;
       }
 
-      const lines = this.batchSecretsInput.split('\n');
+      const lines = currentInput.split('\n');
       let addedCount = 0;
       let failedCount = 0;
       let newKeysToAdd = [];
@@ -94,18 +97,22 @@ const app = Vue.createApp({
         
         if (!secretPart) return; 
 
-        // Try to parse "email\tsecret" or "name:secret"
-        // Prefer Tab as a more distinct separator for email like names
         let parts;
-        if (secretPart.includes('\t')) {
+        // Prioritize Tab for separation, as colon can be part of a name more easily
+        if (secretPart.includes('\t')) { 
             parts = secretPart.split('\t');
         } else if (secretPart.includes(':')) {
-            parts = secretPart.split(':');
+            parts = secretPart.split(/:,(.*)/s); // Split only on the first colon
+             if(parts.length === 1 && secretPart.includes(':')) { // Handle case where split might not work as expected
+                let firstColonIndex = secretPart.indexOf(':');
+                parts = [secretPart.substring(0, firstColonIndex), secretPart.substring(firstColonIndex + 1)];
+            }
         }
 
+
         if (parts && parts.length > 1) {
-            name = parts.shift().trim(); 
-            secretPart = parts.join(parts.length > 1 && secretPart.includes('\t') ? '\t' : ':').trim(); // Rejoin if separator was in secret
+            name = parts[0].trim(); 
+            secretPart = parts.slice(1).join(secretPart.includes('\t') ? '\t' : ':').trim();
         }
 
 
@@ -125,20 +132,21 @@ const app = Vue.createApp({
             editingNameValue: name || `密钥 ${this.keys.length + newKeysToAdd.length + 1}`,
           };
           newKeysToAdd.push(keyToAdd);
-          addedCount++;
+          // addedCount++; // Increment count after successful push
         } catch (e) {
           failedCount++;
           console.warn(`批量添加失败 (行 ${index + 1}): "${line}". 原因: ${e.message}`);
         }
       });
-
+      
       if (newKeysToAdd.length > 0) {
         this.keys.push(...newKeysToAdd);
         this.saveKeysToStorage();
         this.updateAllTokens();
+        addedCount = newKeysToAdd.length; // Correctly count added keys
       }
-
-      this.batchSecretsInput = ''; 
+      
+      this.batchSecretsInput = ''; // Clear textarea only after processing
       
       let message = '';
       if (addedCount > 0) {
@@ -147,28 +155,36 @@ const app = Vue.createApp({
       if (failedCount > 0) {
         message += (message ? ' ' : '') + `${failedCount} 个密钥添加失败 (格式无效)。`;
       }
-      if (!message && lines.some(s => s.trim())) {
-        message = "没有输入有效密钥。";
-      } else if (!message) {
-        return; 
+      // Only show toast if there was something to process or an error occurred
+      if ((addedCount > 0 || failedCount > 0) || (currentInput.trim() && addedCount === 0 && failedCount === 0) ){
+           if (!message) message = "没有新的有效密钥被添加。";
+           this.showToast(message, failedCount > 0 && addedCount === 0);
       }
-      this.showToast(message, failedCount > 0 && addedCount === 0);
     },
     
-    // Debounce processing for textarea input to avoid too frequent updates
+    processBatchInputOnBlur: function() {
+        // Process whatever is in the input on blur, unless it's empty
+        if (this.batchSecretsInput.trim()) {
+            this.processBatchInput(false);
+        }
+    },
+
     debounceProcessBatchInput: function() {
         clearTimeout(this.inputDebounceTimer);
-        this.inputDebounceTimer = setTimeout(() => {
-            // We don't auto-process on every input for better UX. 
-            // User can click the button or it processes on blur.
-            // If you want auto-processing on input, call this.processBatchInput() here.
-        }, 750); // 750ms delay
+        // No auto-processing on input, user will use blur or paste
+        // If you want to auto-process after typing stops, uncomment below:
+        // this.inputDebounceTimer = setTimeout(() => {
+        //     this.processBatchInput(false); 
+        // }, 1500); // 1.5s delay after last input
     },
 
     handlePaste: function(event) {
-        this.$nextTick(() => { // Allow textarea to update with pasted content
-             clearTimeout(this.inputDebounceTimer); // Clear any pending debounce
-             this.processBatchInput(); // Process immediately on paste
+        event.preventDefault(); // Prevent default paste behavior
+        const pasteData = (event.clipboardData || window.clipboardData).getData('text');
+        this.batchSecretsInput = pasteData; // Manually set textarea value
+        this.$nextTick(() => { 
+             clearTimeout(this.inputDebounceTimer); 
+             this.processBatchInput(true); // Process immediately on paste
         });
     },
     
@@ -198,6 +214,7 @@ const app = Vue.createApp({
     },
 
     removeKey: function (index) {
+      // Direct delete without confirmation
       const removedKeyName = this.keys[index].name || `密钥 ${index + 1}`;
       this.keys.splice(index, 1);
       this.saveKeysToStorage();
@@ -218,7 +235,7 @@ const app = Vue.createApp({
             const { isEditingName, editingNameValue, ...rest } = k;
             return rest;
         });
-        localStorage.setItem('totpKeys_v4_grid_auto', JSON.stringify(keysToSave)); // Updated storage key
+        localStorage.setItem('totpKeys_v5_final', JSON.stringify(keysToSave)); // New storage key
       } catch (e) {
         console.error("Error saving keys to localStorage:", e);
         this.showToast("无法保存密钥到本地存储。", true);
@@ -227,7 +244,7 @@ const app = Vue.createApp({
 
     loadKeysFromStorage: function () {
       try {
-        const storedKeys = localStorage.getItem('totpKeys_v4_grid_auto'); // Updated storage key
+        const storedKeys = localStorage.getItem('totpKeys_v5_final'); // New storage key
         if (storedKeys) {
           const parsedKeys = JSON.parse(storedKeys);
           this.keys = parsedKeys.map(key => ({
@@ -236,30 +253,30 @@ const app = Vue.createApp({
             secret: key.secret || '',
             digits: parseInt(key.digits, 10) || 6,
             period: parseInt(key.period, 10) || 30,
-            algorithm: key.algorithm || 'SHA1', // Keep stored algorithm, even if UI defaults to SHA1 for new adds
+            algorithm: key.algorithm || 'SHA1', 
             token: '', 
             updatingIn: 0,
             isEditingName: false, 
             editingNameValue: key.name || '', 
           }));
         } else {
-          // Attempt to migrate from 'totpKeys_v3_grid_auto' (previous grid version)
-          const prevGridKeys = localStorage.getItem('totpKeys_v3_grid_auto');
-          if (prevGridKeys) {
-            const parsedOldGrid = JSON.parse(prevGridKeys);
-            this.keys = parsedOldGrid.map(key => ({
-              ...key, 
+          // Migration from 'totpKeys_v4_grid_auto'
+          const prevV4Keys = localStorage.getItem('totpKeys_v4_grid_auto');
+          if (prevV4Keys) {
+            const parsedV4 = JSON.parse(prevV4Keys);
+            this.keys = parsedV4.map(key => ({
+              ...key,
               id: key.id || generateUUID(),
               name: key.name || '',
               isEditingName: false,
               editingNameValue: key.name || '',
             }));
-            this.saveKeysToStorage(); 
-            localStorage.removeItem('totpKeys_v3_grid_auto');
-            this.showToast("密钥已迁移到最新格式。");
+            this.saveKeysToStorage();
+            localStorage.removeItem('totpKeys_v4_grid_auto');
+            this.showToast("密钥已从 V4 迁移。");
             return;
           }
-          // ... (keep other older migration logic if necessary, or remove if not relevant anymore)
+          // Add other older migration logic if necessary
         }
       } catch (e) {
         console.error("Error loading keys from localStorage:", e);
