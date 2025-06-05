@@ -94,17 +94,25 @@
       letter-spacing: 0.5px;
     }
 
-    .input, .select select {
+    .input, .select select, .textarea { /* Added .textarea */
       border: 1px solid #dbdee5;
       border-radius: 6px;
       box-shadow: none;
       transition: all 0.2s;
       padding-left: 0.75rem;
-      height: 2.5rem;
+      padding-right: 0.75rem; /* Added for textarea consistency */
+      padding-top: calc(.5em - 1px); /* Added for textarea consistency */
+      padding-bottom: calc(.5em - 1px); /* Added for textarea consistency */
+      height: 2.5rem; /* Default height, textarea can override */
       background-color: rgba(255, 255, 255, 0.8);
     }
+    .textarea {
+        min-height: 8em; /* Specific height for textarea */
+        height: auto;
+    }
 
-    .input:focus, .select select:focus {
+
+    .input:focus, .select select:focus, .textarea:focus { /* Added .textarea */
       border-color: var(--primary-color);
       box-shadow: 0 0 0 1px rgba(50, 115, 220, 0.2);
       background-color: white;
@@ -219,6 +227,12 @@
       transform: translateY(1px);
       box-shadow: 0 2px 8px rgba(50, 115, 220, 0.4);
     }
+    .button.is-success {
+        background-color: var(--secondary-color);
+    }
+     .button.is-success:hover {
+        background-color: #3db865; /* Darker shade for secondary */
+    }
 
 
     .toast {
@@ -261,7 +275,7 @@
       text-decoration: none;
     }
 
-    .add-key-form {
+    .add-key-section { /* Renamed from add-key-form */
         padding: 1.5rem;
         border-top: 1px solid #eee;
     }
@@ -292,12 +306,19 @@
         border-radius: 12px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
     }
+    .tabs ul {
+        border-bottom-color: #dbdbdb;
+    }
+    .tabs li.is-active a {
+        border-bottom-color: var(--primary-color);
+        color: var(--primary-color);
+    }
 
   </style>
 </head>
 <body>
 
-  <div id="toast" class="toast">验证码已复制!</div>
+  <div id="toast" class="toast">信息已提示!</div>
 
   <section id="app" class="section" v-cloak>
     <div class="container">
@@ -307,9 +328,14 @@
       <div v-if="keys.length > 0">
         <div v-for="(keyEntry, index) in keys" :key="keyEntry.id" class="card key-entry-card">
           <div class="card-content">
-            <div class="columns is-vcentered">
+            <div class="columns is-vcentered is-mobile">
               <div class="column">
-                <p class="key-name-display">{{ keyEntry.name || '密钥 ' + (index + 1) }}</p>
+                <p class="key-name-display" @click="editKeyName(keyEntry)">
+                  {{ keyEntry.name || '密钥 ' + (index + 1) }}
+                  <span class="icon is-small has-text-grey-light ml-1" title="点击编辑名称">
+                    <i class="fas fa-pencil-alt fa-xs"></i>
+                  </span>
+                </p>
                 <p class="secret-key-display is-size-7 has-text-grey">{{ keyEntry.secret }}</p>
                  <div class="mb-05">
                   <span class="has-text-grey is-size-7">{{ keyEntry.updatingIn }} 秒后更新</span>
@@ -332,63 +358,124 @@
       </div>
        <div v-else class="no-keys-message">
         <p class="is-size-5">还没有添加密钥哦！</p>
-        <p>请在下方表单中添加您的第一个密钥。</p>
+        <p>请在下方表单中添加您的密钥。</p>
       </div>
 
 
-      <!-- 添加密钥的表单 -->
-      <div class="box add-key-form mt-5">
-        <h2 class="title is-5 has-text-centered">添加新密钥</h2>
-        <div class="field">
-          <label class="label">名称 (可选)</label>
-          <div class="control">
-            <input class="input" type="text" v-model="newKey.name" placeholder="例如：谷歌邮箱">
-          </div>
+      <!-- 添加密钥的区域 -->
+      <div class="box add-key-section mt-5">
+        <div class="tabs is-boxed is-fullwidth">
+          <ul>
+            <li :class="{'is-active': activeTab === 'single'}" @click="activeTab = 'single'"><a>单个添加</a></li>
+            <li :class="{'is-active': activeTab === 'batch'}" @click="activeTab = 'batch'"><a>批量添加</a></li>
+          </ul>
         </div>
-        <div class="field">
-          <label class="label">密钥 (Base32)</label>
-          <div class="control">
-            <input class="input" type="text" v-model="newKey.secret" placeholder="输入Base32格式的密钥" required>
+
+        <!-- 单个添加表单 -->
+        <div v-if="activeTab === 'single'">
+          <h2 class="title is-5 has-text-centered mb-4">添加新密钥</h2>
+          <div class="field">
+            <label class="label">名称 (可选)</label>
+            <div class="control">
+              <input class="input" type="text" v-model="newKey.name" placeholder="例如：谷歌邮箱">
+            </div>
           </div>
-        </div>
-        <div class="columns">
-          <div class="column">
-            <div class="field">
-              <label class="label">验证码位数</label>
-              <div class="control">
-                <input class="input" type="number" v-model.number="newKey.digits" placeholder="默认 6">
+          <div class="field">
+            <label class="label">密钥 (Base32)</label>
+            <div class="control">
+              <input class="input" type="text" v-model="newKey.secret" placeholder="输入Base32格式的密钥" required>
+            </div>
+          </div>
+          <div class="columns is-mobile">
+            <div class="column">
+              <div class="field">
+                <label class="label">验证码位数</label>
+                <div class="control">
+                  <input class="input" type="number" v-model.number="newKey.digits" placeholder="默认 6">
+                </div>
+              </div>
+            </div>
+            <div class="column">
+              <div class="field">
+                <label class="label">令牌周期 (秒)</label>
+                <div class="control">
+                  <input class="input" type="number" v-model.number="newKey.period" placeholder="默认 30">
+                </div>
               </div>
             </div>
           </div>
-          <div class="column">
-            <div class="field">
-              <label class="label">令牌周期 (秒)</label>
-              <div class="control">
-                <input class="input" type="number" v-model.number="newKey.period" placeholder="默认 30">
+          <div class="field">
+            <label class="label">算法</label>
+            <div class="control">
+              <div class="select is-fullwidth">
+                <select v-model="newKey.algorithm">
+                  <option>SHA1</option>
+                  <option>SHA256</option>
+                  <option>SHA512</option>
+                </select>
               </div>
             </div>
           </div>
-        </div>
-        <div class="field">
-          <label class="label">算法</label>
-          <div class="control">
-            <div class="select is-fullwidth">
-              <select v-model="newKey.algorithm">
-                <option>SHA1</option>
-                <option>SHA256</option>
-                <option>SHA512</option>
-              </select>
-            </div>
+          <div class="field has-text-centered mt-4">
+            <button class="button is-primary is-fullwidth" @click="addKey">
+               <span class="icon">
+                  <i class="fas fa-plus"></i>
+              </span>
+              <span>添加密钥</span>
+            </button>
           </div>
         </div>
-        <div class="field has-text-centered mt-4">
-          <button class="button is-primary is-fullwidth" @click="addKey">
-             <span class="icon">
-                <i class="fas fa-plus"></i>
-            </span>
-            <span>添加密钥</span>
-          </button>
+
+        <!-- 批量添加表单 -->
+        <div v-if="activeTab === 'batch'">
+          <h2 class="title is-5 has-text-centered mb-4">批量添加密钥</h2>
+          <div class="field">
+            <label class="label">密钥列表 (每行一个)</label>
+            <div class="control">
+              <textarea class="textarea" v-model="batchSecretsInput" placeholder="BCLQ5FLW3TLOTUXK&#10;X3ID2JRHA6H53JIR&#10;G6RYBUGRDCS74LD4" rows="5"></textarea>
+            </div>
+            <p class="help">名称将自动生成，您可以在添加后修改。位数、周期和算法将使用以下默认值。</p>
+          </div>
+           <div class="columns is-mobile">
+            <div class="column">
+              <div class="field">
+                <label class="label">默认位数</label>
+                <div class="control">
+                  <input class="input" type="number" v-model.number="batchDefaultSettings.digits">
+                </div>
+              </div>
+            </div>
+            <div class="column">
+              <div class="field">
+                <label class="label">默认周期 (秒)</label>
+                <div class="control">
+                  <input class="input" type="number" v-model.number="batchDefaultSettings.period">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">默认算法</label>
+            <div class="control">
+              <div class="select is-fullwidth">
+                <select v-model="batchDefaultSettings.algorithm">
+                  <option>SHA1</option>
+                  <option>SHA256</option>
+                  <option>SHA512</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="field has-text-centered mt-4">
+            <button class="button is-success is-fullwidth" @click="addKeysInBatch">
+              <span class="icon">
+                  <i class="fas fa-list-ul"></i>
+              </span>
+              <span>批量添加所有密钥</span>
+            </button>
+          </div>
         </div>
+
       </div>
     </div>
   </section>
@@ -403,9 +490,7 @@
 
   <script src="js/assets/vue-3.4.20.global.prod.js"></script>
   <script src="js/assets/otpauth-9.1.3.min.js"></script>
-  <!-- ClipboardJS is not strictly needed if we use navigator.clipboard -->
-  <!-- <script src="js/assets/clipboard-2.0.6.min.js"></script> -->
-  <script src="js/app.js?v=1.3"></script>
+  <script src="js/app.js?v=1.4"></script> <!-- Incremented version -->
   <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </body>
 </html>
@@ -448,33 +533,43 @@ const app = Vue.createApp({
         digits: 6,
         period: 30,
         algorithm: 'SHA1',
-        token: '',
-        updatingIn: 0,
+        // token and updatingIn are per-key, not for the form
       },
+      batchSecretsInput: '', // For the textarea input
+      batchDefaultSettings: { // Default settings for batch adding
+        digits: 6,
+        period: 30,
+        algorithm: 'SHA1',
+      },
+      activeTab: 'single', // 'single' or 'batch'
       intervalHandle: null,
-      toastTimeout: null, // For managing toast display
+      toastTimeout: null,
     };
   },
 
   mounted: function () {
-    this.loadKeysFromStorage(); // Load keys from localStorage
+    this.loadKeysFromStorage();
     this.updateAllTokens();
     this.intervalHandle = setInterval(this.updateAllTokens, 1000);
   },
 
-  beforeUnmount: function () { // Changed from destroyed for Vue 3
+  beforeUnmount: function () {
     clearInterval(this.intervalHandle);
     if (this.toastTimeout) clearTimeout(this.toastTimeout);
   },
 
   methods: {
-    // Update all tokens and their countdowns
     updateAllTokens: function () {
       this.keys.forEach(keyEntry => {
         try {
+          if (!keyEntry.secret || stripSpaces(keyEntry.secret).length === 0) {
+            keyEntry.token = "密钥无效";
+            keyEntry.updatingIn = (keyEntry.period || 30);
+            return; 
+          }
           const totp = new OTPAuth.TOTP({
-            issuer: keyEntry.name || '', // Optional: use name as issuer
-            label: 'OTPAuth', // Optional: a label
+            issuer: keyEntry.name || '',
+            label: 'OTPAuth:' + (keyEntry.name || keyEntry.secret.substring(0,6)), // More unique label
             algorithm: keyEntry.algorithm || 'SHA1',
             digits: parseInt(keyEntry.digits, 10) || 6,
             period: parseInt(keyEntry.period, 10) || 30,
@@ -484,31 +579,30 @@ const app = Vue.createApp({
           keyEntry.updatingIn = (keyEntry.period || 30) - (getCurrentSeconds() % (keyEntry.period || 30));
         } catch (error) {
           console.error("Error generating token for key:", keyEntry.name || keyEntry.secret, error);
-          keyEntry.token = "错误"; // Display error for this specific token
-          keyEntry.updatingIn = (keyEntry.period || 30); // Reset countdown
+          keyEntry.token = "错误";
+          keyEntry.updatingIn = (keyEntry.period || 30);
         }
       });
     },
 
-    // Add a new key
     addKey: function () {
-      if (!this.newKey.secret.trim()) {
+      const secretTrimmed = this.newKey.secret.trim();
+      if (!secretTrimmed) {
         this.showToast("密钥不能为空！", true);
         return;
       }
       try {
-        // Validate secret by attempting to create a secret object
-        OTPAuth.Secret.fromBase32(stripSpaces(this.newKey.secret));
+        OTPAuth.Secret.fromBase32(stripSpaces(secretTrimmed));
       } catch (e) {
-        this.showToast("无效的Base32密钥格式！", true);
+        this.showToast("无效的Base32密钥格式！请检查密钥。", true);
         console.error("Invalid secret format:", e);
         return;
       }
 
       const keyToAdd = {
         id: generateUUID(),
-        name: this.newKey.name.trim(),
-        secret: stripSpaces(this.newKey.secret.trim().toUpperCase()), // Store secret without spaces and uppercase
+        name: this.newKey.name.trim() || '', // Default to empty string if no name
+        secret: stripSpaces(secretTrimmed.toUpperCase()),
         digits: parseInt(this.newKey.digits, 10) || 6,
         period: parseInt(this.newKey.period, 10) || 30,
         algorithm: this.newKey.algorithm || 'SHA1',
@@ -518,20 +612,79 @@ const app = Vue.createApp({
       this.keys.push(keyToAdd);
       this.saveKeysToStorage();
       this.resetNewKeyForm();
-      this.updateAllTokens(); // Update immediately after adding
+      this.updateAllTokens(); 
       this.showToast("密钥添加成功!");
     },
 
-    // Remove a key
+    addKeysInBatch: function() {
+      const secrets = this.batchSecretsInput.split('\n');
+      let addedCount = 0;
+      let failedCount = 0;
+
+      secrets.forEach((secretLine, index) => {
+        const secretTrimmed = secretLine.trim();
+        if (!secretTrimmed) {
+          return; // Skip empty lines
+        }
+
+        try {
+          OTPAuth.Secret.fromBase32(stripSpaces(secretTrimmed)); // Validate format
+          
+          const keyToAdd = {
+            id: generateUUID(),
+            name: `密钥 ${this.keys.length + addedCount + 1}`, // Auto-generate name
+            secret: stripSpaces(secretTrimmed.toUpperCase()),
+            digits: parseInt(this.batchDefaultSettings.digits, 10) || 6,
+            period: parseInt(this.batchDefaultSettings.period, 10) || 30,
+            algorithm: this.batchDefaultSettings.algorithm || 'SHA1',
+            token: '',
+            updatingIn: 0,
+          };
+          this.keys.push(keyToAdd);
+          addedCount++;
+        } catch (e) {
+          failedCount++;
+          console.warn(`批量添加失败 (行 ${index + 1}): "${secretTrimmed}". 原因: ${e.message}`);
+        }
+      });
+
+      if (addedCount > 0) {
+        this.saveKeysToStorage();
+        this.updateAllTokens();
+      }
+
+      this.batchSecretsInput = ''; // Clear textarea
+      
+      let message = '';
+      if (addedCount > 0) {
+        message += `成功添加 ${addedCount} 个密钥。`;
+      }
+      if (failedCount > 0) {
+        message += (message ? ' ' : '') + `${failedCount} 个密钥添加失败 (格式无效)。`;
+      }
+      if (!message) {
+        message = "没有输入有效密钥。";
+      }
+      this.showToast(message, failedCount > 0 && addedCount === 0);
+    },
+    
+    editKeyName: function(keyEntry) {
+        const newName = prompt(`为密钥 "${keyEntry.secret.substring(0,10)}..." 输入新名称:`, keyEntry.name);
+        if (newName !== null) { // null if user pressed cancel
+            keyEntry.name = newName.trim();
+            this.saveKeysToStorage();
+            this.showToast("名称已更新。");
+        }
+    },
+
     removeKey: function (index) {
-      if (confirm(`确定要删除密钥 "${this.keys[index].name || '该密钥'}" 吗?`)) {
+      if (window.confirm(`确定要删除密钥 "${this.keys[index].name || '该密钥'}" 吗? 这将从本地存储中移除它。`)) {
         this.keys.splice(index, 1);
         this.saveKeysToStorage();
         this.showToast("密钥已删除。");
       }
     },
 
-    // Reset the new key form
     resetNewKeyForm: function () {
       this.newKey.name = '';
       this.newKey.secret = '';
@@ -540,7 +693,6 @@ const app = Vue.createApp({
       this.newKey.algorithm = 'SHA1';
     },
 
-    // Save keys to localStorage
     saveKeysToStorage: function () {
       try {
         localStorage.setItem('totpKeys_v2', JSON.stringify(this.keys));
@@ -550,21 +702,22 @@ const app = Vue.createApp({
       }
     },
 
-    // Load keys from localStorage
     loadKeysFromStorage: function () {
       try {
         const storedKeys = localStorage.getItem('totpKeys_v2');
         if (storedKeys) {
-          this.keys = JSON.parse(storedKeys);
-          // Ensure all keys have default values if some are missing from older storage
-          this.keys.forEach(key => {
-            key.digits = key.digits || 6;
-            key.period = key.period || 30;
-            key.algorithm = key.algorithm || 'SHA1';
-            if (!key.id) key.id = generateUUID(); // Add ID if missing
-          });
+          const parsedKeys = JSON.parse(storedKeys);
+          this.keys = parsedKeys.map(key => ({
+            id: key.id || generateUUID(), 
+            name: key.name || '',
+            secret: key.secret || '',
+            digits: parseInt(key.digits, 10) || 6,
+            period: parseInt(key.period, 10) || 30,
+            algorithm: key.algorithm || 'SHA1',
+            token: '', 
+            updatingIn: 0,
+          }));
         } else {
-           // Attempt to load from old single key format for migration
           const oldSecret = localStorage.getItem('totp_secret_key');
           if (oldSecret) {
             this.keys.push({
@@ -577,25 +730,23 @@ const app = Vue.createApp({
               token: '',
               updatingIn: 0,
             });
-            // Clean up old storage items
             localStorage.removeItem('totp_secret_key');
             localStorage.removeItem('totp_digits');
             localStorage.removeItem('totp_period');
             localStorage.removeItem('totp_algorithm');
-            this.saveKeysToStorage(); // Save in new format
-             this.showToast("旧版密钥已迁移。");
+            this.saveKeysToStorage(); 
+            this.showToast("旧版密钥已成功迁移。");
           }
         }
       } catch (e) {
         console.error("Error loading keys from localStorage:", e);
-        this.keys = []; // Reset to empty if localStorage is corrupt
-        this.showToast("无法从本地存储加载密钥。", true);
+        this.keys = []; 
+        this.showToast("无法从本地存储加载密钥。请检查浏览器控制台获取更多信息。", true);
       }
     },
 
-    // Copy token to clipboard
     copyToken: function (token, keyId) {
-      if (!token || token === "错误") {
+      if (!token || token === "错误" || token === "密钥无效") {
         this.showToast("无法复制无效的验证码！", true);
         return;
       }
@@ -603,10 +754,31 @@ const app = Vue.createApp({
         this.showToast(`验证码 "${token}" 已复制!`);
       }).catch(err => {
         console.error('Failed to copy: ', err);
-        this.showToast("复制失败，请手动复制。", true);
+        try {
+            const textArea = document.createElement("textarea");
+            textArea.value = token;
+            textArea.style.position = "fixed";
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.width = "2em";
+            textArea.style.height = "2em";
+            textArea.style.padding = "0";
+            textArea.style.border = "none";
+            textArea.style.outline = "none";
+            textArea.style.boxShadow = "none";
+            textArea.style.background = "transparent";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            this.showToast(`验证码 "${token}" 已复制 (备用方法)!`);
+        } catch (execCommandErr) {
+            console.error('Fallback copy failed:', execCommandErr);
+            this.showToast("复制失败，请手动复制。", true);
+        }
       });
     },
-    // Show toast message
     showToast: function (message, isError = false) {
       const toast = document.getElementById('toast');
       if (toast) {
