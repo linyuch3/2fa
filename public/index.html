@@ -16,6 +16,9 @@
       --bg-color: #f2f7ff;
       --danger-color: #f14668;
       --danger-dark: #d93058;
+      --card-bg: white;
+      --card-shadow: 0 6px 25px rgba(0, 0, 0, 0.07);
+      --grid-gap: 1.5rem; /* Grid gap */
     }
 
     [v-cloak] {
@@ -31,18 +34,7 @@
         radial-gradient(circle at 90% 80%, rgba(100, 200, 255, 0.05) 0%, rgba(100, 200, 255, 0) 70%),
         linear-gradient(135deg, #f2f7ff 0%, #edf3ff 100%);
       overflow-x: hidden;
-    }
-
-    body > footer {
-      position: sticky;
-      top: 100vh;
-      z-index: 10;
-    }
-
-    .footer {
-      padding: 1.5rem;
-      background-color: white;
-      box-shadow: 0 -1px 3px rgba(0,0,0,0.05);
+      padding-bottom: 120px; /* Space for fixed footer instructions */
     }
 
     .container {
@@ -50,41 +42,13 @@
       margin-top: 1.5rem;
       margin-bottom: 1.5rem;
       z-index: 1;
-      max-width: 760px !important; /* 调整容器宽度以适应多密钥 */
+      max-width: 1100px !important; /* Wider container for grid */
     }
-
-    body:before, body:after {
-      content: '';
-      position: fixed;
-      z-index: -1;
-    }
-
-    body:before {
-      width: 40vw;
-      height: 40vw;
-      top: -20vw;
-      left: -10vw;
-      background: radial-gradient(circle, rgba(50, 115, 220, 0.08) 0%, rgba(50, 115, 220, 0) 70%);
-      border-radius: 50%;
-    }
-
-    body:after {
-      width: 50vw;
-      height: 50vw;
-      bottom: -25vw;
-      right: -15vw;
-      background: radial-gradient(circle, rgba(108, 92, 231, 0.06) 0%, rgba(108, 92, 231, 0) 70%);
-      border-radius: 50%;
-    }
-
+    
     .title {
       color: var(--primary-color);
       font-weight: 700;
-      margin-bottom: 1.5rem;
-    }
-
-    .field {
-      margin-bottom: 1rem;
+      margin-bottom: 2rem; /* Increased margin */
     }
 
     .label {
@@ -94,159 +58,190 @@
       letter-spacing: 0.5px;
     }
 
-    .input, .select select, .textarea { /* Added .textarea */
+    .input, .textarea {
       border: 1px solid #dbdee5;
-      border-radius: 6px;
+      border-radius: 8px; /* Softer radius */
       box-shadow: none;
       transition: all 0.2s;
-      padding-left: 0.75rem;
-      padding-right: 0.75rem; /* Added for textarea consistency */
-      padding-top: calc(.5em - 1px); /* Added for textarea consistency */
-      padding-bottom: calc(.5em - 1px); /* Added for textarea consistency */
-      height: 2.5rem; /* Default height, textarea can override */
-      background-color: rgba(255, 255, 255, 0.8);
+      padding: 0.75rem 1rem; /* Increased padding */
+      height: 2.8rem;
+      background-color: rgba(255, 255, 255, 0.9);
     }
     .textarea {
-        min-height: 8em; /* Specific height for textarea */
+        min-height: 10em; /* Specific height for textarea */
         height: auto;
+        padding: 1rem;
     }
 
-
-    .input:focus, .select select:focus, .textarea:focus { /* Added .textarea */
+    .input:focus, .textarea:focus {
       border-color: var(--primary-color);
-      box-shadow: 0 0 0 1px rgba(50, 115, 220, 0.2);
+      box-shadow: 0 0 0 2px rgba(50, 115, 220, 0.25); /* More prominent focus */
       background-color: white;
     }
-
+    
     .progress {
-      height: 6px;
+      height: 8px; /* Slightly thicker */
       border-radius: 4px;
       overflow: hidden;
-      margin-top: 0.3rem;
+      margin-top: 0.5rem; /* Increased spacing */
       background-color: rgba(234, 234, 234, 0.8);
     }
 
     .progress::-webkit-progress-value {
       background-color: var(--primary-color);
       background-image: linear-gradient(45deg,
-        rgba(255, 255, 255, .15) 25%,
+        rgba(255, 255, 255, .2) 25%,
         transparent 25%,
         transparent 50%,
-        rgba(255, 255, 255, .15) 50%,
-        rgba(255, 255, 255, .15) 75%,
+        rgba(255, 255, 255, .2) 50%,
+        rgba(255, 255, 255, .2) 75%,
         transparent 75%,
         transparent);
-      background-size: 1rem 1rem;
-      animation: progressAnimation 1s linear infinite;
+      background-size: 1.2rem 1.2rem; /* Slightly larger pattern */
+      animation: progressAnimation 1.2s linear infinite;
       transition: width 0.3s ease-out;
     }
      .progress::-moz-progress-bar {
       background-color: var(--primary-color);
       background-image: linear-gradient(45deg,
-        rgba(255, 255, 255, .15) 25%,
+        rgba(255, 255, 255, .2) 25%,
         transparent 25%,
         transparent 50%,
-        rgba(255, 255, 255, .15) 50%,
-        rgba(255, 255, 255, .15) 75%,
+        rgba(255, 255, 255, .2) 50%,
+        rgba(255, 255, 255, .2) 75%,
         transparent 75%,
         transparent);
-      background-size: 1rem 1rem;
-      animation: progressAnimation 1s linear infinite;
+      background-size: 1.2rem 1.2rem;
+      animation: progressAnimation 1.2s linear infinite;
       transition: width 0.3s ease-out;
     }
 
-
     @keyframes progressAnimation {
-      0% { background-position: 1rem 0; }
+      0% { background-position: 1.2rem 0; }
       100% { background-position: 0 0; }
     }
 
-    .card, .box {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-      margin-bottom: 1.5rem;
-      position: relative;
-      overflow: hidden;
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
-    }
-    .key-entry-card {
-        border-left: 4px solid var(--primary-color);
-    }
-    .key-entry-card + .key-entry-card {
-        margin-top: 1.5rem;
+    .keys-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Responsive grid */
+        gap: var(--grid-gap);
+        margin-bottom: 2rem;
     }
 
+    .key-entry-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    }
+    .key-entry-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .card-content {
+        padding: 1.25rem; /* Consistent padding */
+        flex-grow: 1; /* Allow content to grow */
+        display: flex;
+        flex-direction: column;
+    }
 
     .token {
-      font-size: 2.2rem; /* 调整字体大小以适应卡片 */
+      font-size: 2.5rem; /* Slightly larger token */
       font-weight: 700;
-      letter-spacing: 4px;
-      margin: 0;
+      letter-spacing: 4px; /* Adjusted spacing */
+      margin: 0.5rem 0 0.75rem 0; /* Adjusted margins */
       padding: 0.5rem 0;
       transition: all 0.3s;
       background-image: linear-gradient(135deg, var(--primary-color), var(--accent-color));
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
-      cursor: pointer; /* 添加指针手势，提示可复制 */
+      cursor: pointer;
+      line-height: 1.2;
     }
 
     .pulse {
-      animation: pulse 1s infinite;
+      animation: pulse 0.8s infinite alternate; /* Smoother pulse */
     }
 
     @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.03); }
-      100% { transform: scale(1); }
+      from { opacity: 0.9; transform: scale(1); }
+      to { opacity: 1; transform: scale(1.02); }
     }
 
     .delete-button {
       background-color: var(--danger-color);
       color: white;
       border: none;
-      transition: background-color 0.3s;
+      border-radius: 50%; /* Circular delete button */
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      transition: all 0.2s;
+      position: absolute;
+      top: 10px;
+      right: 10px;
     }
     .delete-button:hover {
       background-color: var(--danger-dark);
+      transform: scale(1.1);
       color: white;
     }
+    .delete-button .icon {
+        margin: 0;
+    }
+    .key-entry-card .columns { margin-bottom: 0; } /* Remove bottom margin from columns in card */
+    .key-entry-card .column:last-child { flex-grow: 0; flex-basis: auto; } /* Ensure delete button column doesn't stretch */
 
+
+    .button.is-primary, .button.is-success {
+        border-radius: 8px; /* Softer radius for buttons */
+        font-weight: 500;
+        padding: 0.75rem 1.5rem; /* Increased padding */
+        transition: all 0.2s ease-out;
+    }
     .button.is-primary {
         background-color: var(--primary-color);
-        box-shadow: 0 4px 12px rgba(50, 115, 220, 0.3);
+        box-shadow: 0 4px 12px rgba(50, 115, 220, 0.2);
     }
     .button.is-primary:hover {
         background-color: var(--primary-dark);
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(50, 115, 220, 0.4);
+        box-shadow: 0 6px 16px rgba(50, 115, 220, 0.3);
     }
      .button.is-primary:active {
-      transform: translateY(1px);
-      box-shadow: 0 2px 8px rgba(50, 115, 220, 0.4);
+      transform: translateY(0px);
+      box-shadow: 0 2px 8px rgba(50, 115, 220, 0.25);
     }
     .button.is-success {
         background-color: var(--secondary-color);
+        box-shadow: 0 4px 12px rgba(72, 199, 116, 0.2);
     }
      .button.is-success:hover {
-        background-color: #3db865; /* Darker shade for secondary */
+        background-color: #3db865;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(72, 199, 116, 0.3);
     }
-
+    .button.is-success:active {
+      transform: translateY(0px);
+      box-shadow: 0 2px 8px rgba(72, 199, 116, 0.25);
+    }
 
     .toast {
       position: fixed;
-      bottom: 2rem; /* 改为底部显示 */
+      bottom: 2rem;
       left: 50%;
       transform: translateX(-50%);
       background-color: var(--secondary-color);
       color: white;
-      padding: 0.7rem 1.4rem;
+      padding: 0.8rem 1.5rem; /* Increased padding */
       border-radius: 8px;
-      font-size: 0.95rem;
+      font-size: 1rem; /* Slightly larger font */
       font-weight: 500;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.15);
       z-index: 1000;
       opacity: 0;
       visibility: hidden;
@@ -263,55 +258,76 @@
       0% { transform: translateX(-50%) translateY(20px); opacity: 0; }
       100% { transform: translateX(-50%) translateY(0); opacity: 1; }
     }
-
-    footer a {
-      color: var(--primary-color);
-      font-weight: 500;
-      transition: all 0.3s;
-    }
-
-    footer a:hover {
-      color: var(--accent-color);
-      text-decoration: none;
-    }
-
-    .add-key-section { /* Renamed from add-key-form */
+    
+    .add-key-section {
         padding: 1.5rem;
         border-top: 1px solid #eee;
     }
-    .mb-05 { margin-bottom: 0.5rem !important; }
 
-    .is-flex-center {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
     .key-name-display {
-        font-weight: 500;
+        font-weight: 600; /* Bolder name */
         color: var(--text-color);
-        margin-bottom: 0.25rem;
-        font-size: 1.1rem;
+        margin-bottom: 0.35rem; /* Adjusted spacing */
+        font-size: 1.15rem; /* Slightly larger */
+        cursor: pointer;
+        display: inline-block; /* For better click area */
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+    .key-name-display:hover {
+        background-color: #f0f0f0;
+    }
+    .key-name-input {
+        font-size: 1.15rem;
+        font-weight: 600;
+        padding: 0.2rem 0.4rem;
+        border: 1px solid var(--primary-color);
+        border-radius: 4px;
+        width: calc(100% - 40px); /* Adjust width to leave space for delete button */
     }
     .secret-key-display {
-        font-size: 0.8rem;
+        font-size: 0.85rem; /* Slightly larger */
         color: #7a7a7a;
         word-break: break-all;
-        margin-bottom: 0.75rem;
+        margin-bottom: 1rem; /* Increased spacing */
     }
     .no-keys-message {
         text-align: center;
-        padding: 2rem;
+        padding: 3rem 2rem; /* Increased padding */
         color: #7a7a7a;
-        background-color: #fff;
+        background-color: var(--card-bg);
         border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        box-shadow: var(--card-shadow);
     }
-    .tabs ul {
-        border-bottom-color: #dbdbdb;
+    .no-keys-message p:first-child {
+      font-size: 1.2rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
     }
-    .tabs li.is-active a {
-        border-bottom-color: var(--primary-color);
+    .footer-instructions {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: #fff;
+        padding: 1rem 1.5rem;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        z-index: 20;
+        font-size: 0.9rem;
+        color: #555;
+    }
+    .footer-instructions h2 {
         color: var(--primary-color);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    .footer-instructions p {
+        margin-bottom: 0.3rem;
+        line-height: 1.5;
+    }
+    .footer-instructions strong {
+        color: var(--primary-dark);
     }
 
   </style>
@@ -322,20 +338,31 @@
 
   <section id="app" class="section" v-cloak>
     <div class="container">
-      <h1 class="title has-text-centered">多账户 2FA 验证码</h1>
+      <h1 class="title is-3 has-text-centered">多账户 2FA 验证码</h1>
 
-      <!-- 密钥列表 -->
-      <div v-if="keys.length > 0">
-        <div v-for="(keyEntry, index) in keys" :key="keyEntry.id" class="card key-entry-card">
+      <!-- 密钥列表 - 网格布局 -->
+      <div v-if="keys.length > 0" class="keys-grid">
+        <div v-for="(keyEntry, index) in keys" :key="keyEntry.id" class="key-entry-card">
           <div class="card-content">
-            <div class="columns is-vcentered is-mobile">
-              <div class="column">
-                <p class="key-name-display" @click="editKeyName(keyEntry)">
+                <button class="button is-danger is-small delete-button" @click="removeKey(index)">
+                  <span class="icon is-small">
+                    <i class="fas fa-trash"></i>
+                  </span>
+                </button>
+                <div v-if="!keyEntry.isEditingName" class="key-name-display" @click="startEditKeyName(keyEntry, index)">
                   {{ keyEntry.name || '密钥 ' + (index + 1) }}
                   <span class="icon is-small has-text-grey-light ml-1" title="点击编辑名称">
                     <i class="fas fa-pencil-alt fa-xs"></i>
                   </span>
-                </p>
+                </div>
+                <input v-else
+                       :id="'name-input-' + keyEntry.id"
+                       type="text"
+                       class="input key-name-input mb-2"
+                       v-model="keyEntry.editingNameValue"
+                       @keyup.enter="saveKeyName(keyEntry)"
+                       @blur="saveKeyName(keyEntry)"
+                       placeholder="输入名称">
                 <p class="secret-key-display is-size-7 has-text-grey">{{ keyEntry.secret }}</p>
                  <div class="mb-05">
                   <span class="has-text-grey is-size-7">{{ keyEntry.updatingIn }} 秒后更新</span>
@@ -344,153 +371,71 @@
                 <p class="title is-4 token has-text-centered" :class="{ 'pulse': keyEntry.updatingIn <= 5 }" :id="'token-' + keyEntry.id" @click="copyToken(keyEntry.token, keyEntry.id)">
                   {{ keyEntry.token }}
                 </p>
-              </div>
-              <div class="column is-narrow">
-                <button class="button is-danger is-small delete-button" @click="removeKey(index)">
-                  <span class="icon is-small">
-                    <i class="fas fa-trash"></i>
-                  </span>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
        <div v-else class="no-keys-message">
         <p class="is-size-5">还没有添加密钥哦！</p>
-        <p>请在下方表单中添加您的密钥。</p>
+        <p>请在下方批量添加您的密钥。</p>
       </div>
 
 
-      <!-- 添加密钥的区域 -->
+      <!-- 批量添加密钥的表单 -->
       <div class="box add-key-section mt-5">
-        <div class="tabs is-boxed is-fullwidth">
-          <ul>
-            <li :class="{'is-active': activeTab === 'single'}" @click="activeTab = 'single'"><a>单个添加</a></li>
-            <li :class="{'is-active': activeTab === 'batch'}" @click="activeTab = 'batch'"><a>批量添加</a></li>
-          </ul>
+        <h2 class="title is-4 has-text-centered mb-4">批量添加密钥</h2>
+        <div class="field">
+          <label class="label">密钥列表 (每行一个)</label>
+          <div class="control">
+            <textarea class="textarea" v-model="batchSecretsInput" placeholder="BCLQ5FLW3TLOTUXK&#10;X3ID2JRHA6H53JIR&#10;G6RYBUGRDCS74LD4" rows="5"></textarea>
+          </div>
+          <p class="help">名称将自动生成，您可以在添加后点击名称进行修改。位数和周期将使用以下默认值。算法默认为SHA1。</p>
         </div>
-
-        <!-- 单个添加表单 -->
-        <div v-if="activeTab === 'single'">
-          <h2 class="title is-5 has-text-centered mb-4">添加新密钥</h2>
-          <div class="field">
-            <label class="label">名称 (可选)</label>
-            <div class="control">
-              <input class="input" type="text" v-model="newKey.name" placeholder="例如：谷歌邮箱">
-            </div>
-          </div>
-          <div class="field">
-            <label class="label">密钥 (Base32)</label>
-            <div class="control">
-              <input class="input" type="text" v-model="newKey.secret" placeholder="输入Base32格式的密钥" required>
-            </div>
-          </div>
-          <div class="columns is-mobile">
-            <div class="column">
-              <div class="field">
-                <label class="label">验证码位数</label>
-                <div class="control">
-                  <input class="input" type="number" v-model.number="newKey.digits" placeholder="默认 6">
-                </div>
-              </div>
-            </div>
-            <div class="column">
-              <div class="field">
-                <label class="label">令牌周期 (秒)</label>
-                <div class="control">
-                  <input class="input" type="number" v-model.number="newKey.period" placeholder="默认 30">
-                </div>
+         <div class="columns is-mobile">
+          <div class="column">
+            <div class="field">
+              <label class="label">默认位数</label>
+              <div class="control">
+                <input class="input" type="number" v-model.number="batchDefaultSettings.digits">
               </div>
             </div>
           </div>
-          <div class="field">
-            <label class="label">算法</label>
-            <div class="control">
-              <div class="select is-fullwidth">
-                <select v-model="newKey.algorithm">
-                  <option>SHA1</option>
-                  <option>SHA256</option>
-                  <option>SHA512</option>
-                </select>
+          <div class="column">
+            <div class="field">
+              <label class="label">默认周期 (秒)</label>
+              <div class="control">
+                <input class="input" type="number" v-model.number="batchDefaultSettings.period">
               </div>
             </div>
-          </div>
-          <div class="field has-text-centered mt-4">
-            <button class="button is-primary is-fullwidth" @click="addKey">
-               <span class="icon">
-                  <i class="fas fa-plus"></i>
-              </span>
-              <span>添加密钥</span>
-            </button>
           </div>
         </div>
-
-        <!-- 批量添加表单 -->
-        <div v-if="activeTab === 'batch'">
-          <h2 class="title is-5 has-text-centered mb-4">批量添加密钥</h2>
-          <div class="field">
-            <label class="label">密钥列表 (每行一个)</label>
-            <div class="control">
-              <textarea class="textarea" v-model="batchSecretsInput" placeholder="BCLQ5FLW3TLOTUXK&#10;X3ID2JRHA6H53JIR&#10;G6RYBUGRDCS74LD4" rows="5"></textarea>
-            </div>
-            <p class="help">名称将自动生成，您可以在添加后修改。位数、周期和算法将使用以下默认值。</p>
-          </div>
-           <div class="columns is-mobile">
-            <div class="column">
-              <div class="field">
-                <label class="label">默认位数</label>
-                <div class="control">
-                  <input class="input" type="number" v-model.number="batchDefaultSettings.digits">
-                </div>
-              </div>
-            </div>
-            <div class="column">
-              <div class="field">
-                <label class="label">默认周期 (秒)</label>
-                <div class="control">
-                  <input class="input" type="number" v-model.number="batchDefaultSettings.period">
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="field">
-            <label class="label">默认算法</label>
-            <div class="control">
-              <div class="select is-fullwidth">
-                <select v-model="batchDefaultSettings.algorithm">
-                  <option>SHA1</option>
-                  <option>SHA256</option>
-                  <option>SHA512</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div class="field has-text-centered mt-4">
-            <button class="button is-success is-fullwidth" @click="addKeysInBatch">
-              <span class="icon">
-                  <i class="fas fa-list-ul"></i>
-              </span>
-              <span>批量添加所有密钥</span>
-            </button>
-          </div>
+        <!-- 默认算法输入框已移除，默认为SHA1 -->
+        <div class="field has-text-centered mt-4">
+          <button class="button is-success is-fullwidth is-medium" @click="addKeysInBatch">
+            <span class="icon">
+                <i class="fas fa-list-ul"></i>
+            </span>
+            <span>批量添加所有密钥</span>
+          </button>
         </div>
-
       </div>
     </div>
   </section>
 
-  <footer class="footer">
-    <div class="container">
-      <div class="content has-text-centered">
-        <p>Built by <a href="https://hailizi.hkg.email" target="_blank">海蛎子</a></p>
-      </div>
+  <!-- Fixed Footer Instructions -->
+  <footer class="footer-instructions">
+    <div class="container" style="max-width: 760px; margin: 0 auto;">
+        <h2 class="title is-6">使用说明</h2>
+        <p><strong>1.</strong> 在上方“密钥列表”文本框中输入或粘贴您的Base32格式密钥，每行一个。</p>
+        <p><strong>2.</strong> 验证码位数默认为<strong>6位</strong>，令牌周期默认为<strong>30秒</strong>。算法固定为<strong>SHA1</strong>。</p>
+        <p><strong>3.</strong> 点击“批量添加所有密钥”按钮，系统会自动生成验证码并倒计时显示剩余有效时间。</p>
+        <p><strong>4.</strong> 点击生成的<strong>数字验证码</strong>即可复制到剪贴板。点击密钥卡片上的<strong>名称</strong>可以进行修改。</p>
     </div>
   </footer>
 
+
   <script src="js/assets/vue-3.4.20.global.prod.js"></script>
   <script src="js/assets/otpauth-9.1.3.min.js"></script>
-  <script src="js/app.js?v=1.4"></script> <!-- Incremented version -->
+  <script src="js/app.js?v=1.5"></script> <!-- Incremented version -->
   <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </body>
 </html>
