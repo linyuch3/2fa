@@ -1,50 +1,625 @@
-<section id="app" class="section" v-cloak>
-  <div class="container">
-    <h1 class="title has-text-centered">多密钥 2FA 验证码</h1>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>多密钥 TOTP 生成器</title>
+  <link rel="stylesheet" href="css/bulma-0.9.4.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #3273dc;
+      --primary-dark: #2366d1;
+      --secondary-color: #48c774;
+      --accent-color: #6c5ce7;
+      --text-color: #363636;
+      --bg-color: #f2f7ff;
+      --danger-color: #f14668;
+      --danger-dark: #d93058;
+    }
 
-    <!-- 工具栏 -->
-    <div class="mb-4">
-      <button class="button is-primary" @click="showAdd = true">新增密钥</button>
-      <button class="button is-info" @click="importKeys">导入</button>
-      <button class="button is-warning" @click="exportKeys">导出</button>
-    </div>
+    [v-cloak] {
+      display: none;
+    }
 
-    <!-- 密钥卡片列表 -->
-    <div v-if="keyList.length === 0" class="has-text-grey has-text-centered">暂无密钥，请添加</div>
-    <div v-for="item in keyList" :key="item.id" class="box token-card">
-      <div class="is-flex is-justify-content-space-between is-align-items-center">
-        <div>
-          <span class="token-title">{{ item.remark || '未命名' }}</span>
-          <span class="token-remark">({{ item.secret.substr(0,6) + '...' }})</span>
+    html, body {
+      min-height: 100%;
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-color);
+      background-image:
+        radial-gradient(circle at 10% 20%, rgba(100, 130, 255, 0.07) 0%, rgba(100, 130, 255, 0) 50%),
+        radial-gradient(circle at 90% 80%, rgba(100, 200, 255, 0.05) 0%, rgba(100, 200, 255, 0) 70%),
+        linear-gradient(135deg, #f2f7ff 0%, #edf3ff 100%);
+      overflow-x: hidden;
+    }
+
+    body > footer {
+      position: sticky;
+      top: 100vh;
+      z-index: 10;
+    }
+
+    .footer {
+      padding: 1.5rem;
+      background-color: white;
+      box-shadow: 0 -1px 3px rgba(0,0,0,0.05);
+    }
+
+    .container {
+      position: relative;
+      margin-top: 1.5rem;
+      margin-bottom: 1.5rem;
+      z-index: 1;
+      max-width: 760px !important; /* 调整容器宽度以适应多密钥 */
+    }
+
+    body:before, body:after {
+      content: '';
+      position: fixed;
+      z-index: -1;
+    }
+
+    body:before {
+      width: 40vw;
+      height: 40vw;
+      top: -20vw;
+      left: -10vw;
+      background: radial-gradient(circle, rgba(50, 115, 220, 0.08) 0%, rgba(50, 115, 220, 0) 70%);
+      border-radius: 50%;
+    }
+
+    body:after {
+      width: 50vw;
+      height: 50vw;
+      bottom: -25vw;
+      right: -15vw;
+      background: radial-gradient(circle, rgba(108, 92, 231, 0.06) 0%, rgba(108, 92, 231, 0) 70%);
+      border-radius: 50%;
+    }
+
+    .title {
+      color: var(--primary-color);
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+
+    .field {
+      margin-bottom: 1rem;
+    }
+
+    .label {
+      color: var(--text-color);
+      font-weight: 600;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+    }
+
+    .input, .select select {
+      border: 1px solid #dbdee5;
+      border-radius: 6px;
+      box-shadow: none;
+      transition: all 0.2s;
+      padding-left: 0.75rem;
+      height: 2.5rem;
+      background-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .input:focus, .select select:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 1px rgba(50, 115, 220, 0.2);
+      background-color: white;
+    }
+
+    .progress {
+      height: 6px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 0.3rem;
+      background-color: rgba(234, 234, 234, 0.8);
+    }
+
+    .progress::-webkit-progress-value {
+      background-color: var(--primary-color);
+      background-image: linear-gradient(45deg,
+        rgba(255, 255, 255, .15) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, .15) 50%,
+        rgba(255, 255, 255, .15) 75%,
+        transparent 75%,
+        transparent);
+      background-size: 1rem 1rem;
+      animation: progressAnimation 1s linear infinite;
+      transition: width 0.3s ease-out;
+    }
+     .progress::-moz-progress-bar {
+      background-color: var(--primary-color);
+      background-image: linear-gradient(45deg,
+        rgba(255, 255, 255, .15) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, .15) 50%,
+        rgba(255, 255, 255, .15) 75%,
+        transparent 75%,
+        transparent);
+      background-size: 1rem 1rem;
+      animation: progressAnimation 1s linear infinite;
+      transition: width 0.3s ease-out;
+    }
+
+
+    @keyframes progressAnimation {
+      0% { background-position: 1rem 0; }
+      100% { background-position: 0 0; }
+    }
+
+    .card, .box {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      margin-bottom: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+    .key-entry-card {
+        border-left: 4px solid var(--primary-color);
+    }
+    .key-entry-card + .key-entry-card {
+        margin-top: 1.5rem;
+    }
+
+
+    .token {
+      font-size: 2.2rem; /* 调整字体大小以适应卡片 */
+      font-weight: 700;
+      letter-spacing: 4px;
+      margin: 0;
+      padding: 0.5rem 0;
+      transition: all 0.3s;
+      background-image: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      cursor: pointer; /* 添加指针手势，提示可复制 */
+    }
+
+    .pulse {
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+
+    .delete-button {
+      background-color: var(--danger-color);
+      color: white;
+      border: none;
+      transition: background-color 0.3s;
+    }
+    .delete-button:hover {
+      background-color: var(--danger-dark);
+      color: white;
+    }
+
+    .button.is-primary {
+        background-color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(50, 115, 220, 0.3);
+    }
+    .button.is-primary:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(50, 115, 220, 0.4);
+    }
+     .button.is-primary:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 8px rgba(50, 115, 220, 0.4);
+    }
+
+
+    .toast {
+      position: fixed;
+      bottom: 2rem; /* 改为底部显示 */
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: var(--secondary-color);
+      color: white;
+      padding: 0.7rem 1.4rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    .toast.show {
+      opacity: 1;
+      visibility: visible;
+      animation: fadeInBottom 0.4s ease-out;
+    }
+
+    @keyframes fadeInBottom {
+      0% { transform: translateX(-50%) translateY(20px); opacity: 0; }
+      100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+    }
+
+    footer a {
+      color: var(--primary-color);
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+
+    footer a:hover {
+      color: var(--accent-color);
+      text-decoration: none;
+    }
+
+    .add-key-form {
+        padding: 1.5rem;
+        border-top: 1px solid #eee;
+    }
+    .mb-05 { margin-bottom: 0.5rem !important; }
+
+    .is-flex-center {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .key-name-display {
+        font-weight: 500;
+        color: var(--text-color);
+        margin-bottom: 0.25rem;
+        font-size: 1.1rem;
+    }
+    .secret-key-display {
+        font-size: 0.8rem;
+        color: #7a7a7a;
+        word-break: break-all;
+        margin-bottom: 0.75rem;
+    }
+    .no-keys-message {
+        text-align: center;
+        padding: 2rem;
+        color: #7a7a7a;
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+
+  </style>
+</head>
+<body>
+
+  <div id="toast" class="toast">验证码已复制!</div>
+
+  <section id="app" class="section" v-cloak>
+    <div class="container">
+      <h1 class="title has-text-centered">多账户 2FA 验证码</h1>
+
+      <!-- 密钥列表 -->
+      <div v-if="keys.length > 0">
+        <div v-for="(keyEntry, index) in keys" :key="keyEntry.id" class="card key-entry-card">
+          <div class="card-content">
+            <div class="columns is-vcentered">
+              <div class="column">
+                <p class="key-name-display">{{ keyEntry.name || '密钥 ' + (index + 1) }}</p>
+                <p class="secret-key-display is-size-7 has-text-grey">{{ keyEntry.secret }}</p>
+                 <div class="mb-05">
+                  <span class="has-text-grey is-size-7">{{ keyEntry.updatingIn }} 秒后更新</span>
+                  <progress class="progress is-info" :value="keyEntry.updatingIn" :max="keyEntry.period"></progress>
+                </div>
+                <p class="title is-4 token has-text-centered" :class="{ 'pulse': keyEntry.updatingIn <= 5 }" :id="'token-' + keyEntry.id" @click="copyToken(keyEntry.token, keyEntry.id)">
+                  {{ keyEntry.token }}
+                </p>
+              </div>
+              <div class="column is-narrow">
+                <button class="button is-danger is-small delete-button" @click="removeKey(index)">
+                  <span class="icon is-small">
+                    <i class="fas fa-trash"></i>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div>
-          <button class="button is-small is-danger is-light" @click="removeKey(item.id)">删除</button>
+      </div>
+       <div v-else class="no-keys-message">
+        <p class="is-size-5">还没有添加密钥哦！</p>
+        <p>请在下方表单中添加您的第一个密钥。</p>
+      </div>
+
+
+      <!-- 添加密钥的表单 -->
+      <div class="box add-key-form mt-5">
+        <h2 class="title is-5 has-text-centered">添加新密钥</h2>
+        <div class="field">
+          <label class="label">名称 (可选)</label>
+          <div class="control">
+            <input class="input" type="text" v-model="newKey.name" placeholder="例如：谷歌邮箱">
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">密钥 (Base32)</label>
+          <div class="control">
+            <input class="input" type="text" v-model="newKey.secret" placeholder="输入Base32格式的密钥" required>
+          </div>
+        </div>
+        <div class="columns">
+          <div class="column">
+            <div class="field">
+              <label class="label">验证码位数</label>
+              <div class="control">
+                <input class="input" type="number" v-model.number="newKey.digits" placeholder="默认 6">
+              </div>
+            </div>
+          </div>
+          <div class="column">
+            <div class="field">
+              <label class="label">令牌周期 (秒)</label>
+              <div class="control">
+                <input class="input" type="number" v-model.number="newKey.period" placeholder="默认 30">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">算法</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select v-model="newKey.algorithm">
+                <option>SHA1</option>
+                <option>SHA256</option>
+                <option>SHA512</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="field has-text-centered mt-4">
+          <button class="button is-primary is-fullwidth" @click="addKey">
+             <span class="icon">
+                <i class="fas fa-plus"></i>
+            </span>
+            <span>添加密钥</span>
+          </button>
         </div>
       </div>
-      <div class="is-flex is-align-items-center mt-2 mb-2">
-        <span class="token-val mr-4">{{ item.token }}</span>
-        <span class="has-text-grey">{{ item.remain }}s</span>
-        <button class="button is-small is-link ml-3" @click="copyToken(item.token)">复制</button>
-      </div>
-      <div class="is-size-7">位数: {{ item.digits }} &nbsp; 周期: {{ item.period }}秒</div>
     </div>
+  </section>
 
-    <!-- 新增密钥弹窗（简版） -->
-    <div v-if="showAdd" class="modal is-active">
-      <div class="modal-background" @click="showAdd = false"></div>
-      <div class="modal-card">
-        <section class="modal-card-body">
-          <h2 class="title is-5 mb-3">新增密钥</h2>
-          <div class="field"><label class="label">备注</label><input class="input" v-model="newKey.remark" placeholder="如：工作邮箱"></div>
-          <div class="field"><label class="label">密钥（Base32）</label><input class="input" v-model="newKey.secret" placeholder="Base32格式密钥"></div>
-          <div class="field"><label class="label">验证码位数</label><input class="input" type="number" v-model.number="newKey.digits" min="6" max="8"></div>
-          <div class="field"><label class="label">令牌周期(秒)</label><input class="input" type="number" v-model.number="newKey.period" min="10" max="90"></div>
-        </section>
-        <footer class="modal-card-foot">
-          <button class="button is-success" @click="addKey">确定</button>
-          <button class="button" @click="showAdd = false">取消</button>
-        </footer>
+  <footer class="footer">
+    <div class="container">
+      <div class="content has-text-centered">
+        <p>Built by <a href="https://hailizi.hkg.email" target="_blank">海蛎子</a></p>
       </div>
     </div>
-  </div>
-</section>
+  </footer>
+
+  <script src="js/assets/vue-3.4.20.global.prod.js"></script>
+  <script src="js/assets/otpauth-9.1.3.min.js"></script>
+  <!-- ClipboardJS is not strictly needed if we use navigator.clipboard -->
+  <!-- <script src="js/assets/clipboard-2.0.6.min.js"></script> -->
+  <script src="js/app.js?v=1.3"></script>
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</body>
+</html>
+```javascript
+// Helper functions (remains mostly the same)
+function getCurrentSeconds() {
+  return Math.round(new Date().getTime() / 1000.0);
+}
+
+function stripSpaces(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/\s/g, '');
+}
+
+function truncateTo(str, digits) {
+  if (typeof str !== 'string') str = String(str);
+  if (str.length <= digits) {
+    return str;
+  }
+  return str.slice(-digits);
+}
+
+// UUID generator for unique key IDs
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+
+const app = Vue.createApp({
+  data() {
+    return {
+      keys: [], // Array to store multiple key entries
+      newKey: { // Data for the "add new key" form
+        id: null,
+        name: '',
+        secret: '',
+        digits: 6,
+        period: 30,
+        algorithm: 'SHA1',
+        token: '',
+        updatingIn: 0,
+      },
+      intervalHandle: null,
+      toastTimeout: null, // For managing toast display
+    };
+  },
+
+  mounted: function () {
+    this.loadKeysFromStorage(); // Load keys from localStorage
+    this.updateAllTokens();
+    this.intervalHandle = setInterval(this.updateAllTokens, 1000);
+  },
+
+  beforeUnmount: function () { // Changed from destroyed for Vue 3
+    clearInterval(this.intervalHandle);
+    if (this.toastTimeout) clearTimeout(this.toastTimeout);
+  },
+
+  methods: {
+    // Update all tokens and their countdowns
+    updateAllTokens: function () {
+      this.keys.forEach(keyEntry => {
+        try {
+          const totp = new OTPAuth.TOTP({
+            issuer: keyEntry.name || '', // Optional: use name as issuer
+            label: 'OTPAuth', // Optional: a label
+            algorithm: keyEntry.algorithm || 'SHA1',
+            digits: parseInt(keyEntry.digits, 10) || 6,
+            period: parseInt(keyEntry.period, 10) || 30,
+            secret: OTPAuth.Secret.fromBase32(stripSpaces(keyEntry.secret)),
+          });
+          keyEntry.token = truncateTo(totp.generate(), keyEntry.digits || 6);
+          keyEntry.updatingIn = (keyEntry.period || 30) - (getCurrentSeconds() % (keyEntry.period || 30));
+        } catch (error) {
+          console.error("Error generating token for key:", keyEntry.name || keyEntry.secret, error);
+          keyEntry.token = "错误"; // Display error for this specific token
+          keyEntry.updatingIn = (keyEntry.period || 30); // Reset countdown
+        }
+      });
+    },
+
+    // Add a new key
+    addKey: function () {
+      if (!this.newKey.secret.trim()) {
+        this.showToast("密钥不能为空！", true);
+        return;
+      }
+      try {
+        // Validate secret by attempting to create a secret object
+        OTPAuth.Secret.fromBase32(stripSpaces(this.newKey.secret));
+      } catch (e) {
+        this.showToast("无效的Base32密钥格式！", true);
+        console.error("Invalid secret format:", e);
+        return;
+      }
+
+      const keyToAdd = {
+        id: generateUUID(),
+        name: this.newKey.name.trim(),
+        secret: stripSpaces(this.newKey.secret.trim().toUpperCase()), // Store secret without spaces and uppercase
+        digits: parseInt(this.newKey.digits, 10) || 6,
+        period: parseInt(this.newKey.period, 10) || 30,
+        algorithm: this.newKey.algorithm || 'SHA1',
+        token: '',
+        updatingIn: 0,
+      };
+      this.keys.push(keyToAdd);
+      this.saveKeysToStorage();
+      this.resetNewKeyForm();
+      this.updateAllTokens(); // Update immediately after adding
+      this.showToast("密钥添加成功!");
+    },
+
+    // Remove a key
+    removeKey: function (index) {
+      if (confirm(`确定要删除密钥 "${this.keys[index].name || '该密钥'}" 吗?`)) {
+        this.keys.splice(index, 1);
+        this.saveKeysToStorage();
+        this.showToast("密钥已删除。");
+      }
+    },
+
+    // Reset the new key form
+    resetNewKeyForm: function () {
+      this.newKey.name = '';
+      this.newKey.secret = '';
+      this.newKey.digits = 6;
+      this.newKey.period = 30;
+      this.newKey.algorithm = 'SHA1';
+    },
+
+    // Save keys to localStorage
+    saveKeysToStorage: function () {
+      try {
+        localStorage.setItem('totpKeys_v2', JSON.stringify(this.keys));
+      } catch (e) {
+        console.error("Error saving keys to localStorage:", e);
+        this.showToast("无法保存密钥到本地存储。", true);
+      }
+    },
+
+    // Load keys from localStorage
+    loadKeysFromStorage: function () {
+      try {
+        const storedKeys = localStorage.getItem('totpKeys_v2');
+        if (storedKeys) {
+          this.keys = JSON.parse(storedKeys);
+          // Ensure all keys have default values if some are missing from older storage
+          this.keys.forEach(key => {
+            key.digits = key.digits || 6;
+            key.period = key.period || 30;
+            key.algorithm = key.algorithm || 'SHA1';
+            if (!key.id) key.id = generateUUID(); // Add ID if missing
+          });
+        } else {
+           // Attempt to load from old single key format for migration
+          const oldSecret = localStorage.getItem('totp_secret_key');
+          if (oldSecret) {
+            this.keys.push({
+              id: generateUUID(),
+              name: '默认密钥 (旧版)',
+              secret: oldSecret,
+              digits: parseInt(localStorage.getItem('totp_digits'), 10) || 6,
+              period: parseInt(localStorage.getItem('totp_period'), 10) || 30,
+              algorithm: localStorage.getItem('totp_algorithm') || 'SHA1',
+              token: '',
+              updatingIn: 0,
+            });
+            // Clean up old storage items
+            localStorage.removeItem('totp_secret_key');
+            localStorage.removeItem('totp_digits');
+            localStorage.removeItem('totp_period');
+            localStorage.removeItem('totp_algorithm');
+            this.saveKeysToStorage(); // Save in new format
+             this.showToast("旧版密钥已迁移。");
+          }
+        }
+      } catch (e) {
+        console.error("Error loading keys from localStorage:", e);
+        this.keys = []; // Reset to empty if localStorage is corrupt
+        this.showToast("无法从本地存储加载密钥。", true);
+      }
+    },
+
+    // Copy token to clipboard
+    copyToken: function (token, keyId) {
+      if (!token || token === "错误") {
+        this.showToast("无法复制无效的验证码！", true);
+        return;
+      }
+      navigator.clipboard.writeText(token).then(() => {
+        this.showToast(`验证码 "${token}" 已复制!`);
+      }).catch(err => {
+        console.error('Failed to copy: ', err);
+        this.showToast("复制失败，请手动复制。", true);
+      });
+    },
+    // Show toast message
+    showToast: function (message, isError = false) {
+      const toast = document.getElementById('toast');
+      if (toast) {
+        toast.textContent = message;
+        toast.style.backgroundColor = isError ? 'var(--danger-color)' : 'var(--secondary-color)';
+        toast.classList.add('show');
+        if (this.toastTimeout) clearTimeout(this.toastTimeout);
+        this.toastTimeout = setTimeout(() => {
+          toast.classList.remove('show');
+        }, 3000);
+      }
+    },
+  }
+});
+
+app.mount('#app');
