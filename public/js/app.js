@@ -1,120 +1,102 @@
-const { createApp, reactive, toRefs, onMounted } = Vue;
-function genId() {
-  return 'id-' + Math.random().toString(36).substr(2, 9);
+function getCurrentSeconds() {
+  return Math.round(new Date().getTime() / 1000.0);
 }
-createApp({
-  setup() {
-    const state = reactive({
-      keyList: [],
-      showAdd: false,
-      newKey: { remark: '', secret: '', digits: 6, period: 30 },
-    });
 
-    // 加载本地存储
-    function load() {
-      const arr = localStorage.getItem('totpKeyList');
-      if (arr) state.keyList = JSON.parse(arr);
-    }
-    function save() {
-      localStorage.setItem('totpKeyList', JSON.stringify(state.keyList));
-    }
+function stripSpaces(str) {
+  return str.replace(/\s/g, '');
+}
 
-    // 生成所有token
-    function updateTokens() {
-      const now = Date.now() / 1000;
-      state.keyList.forEach(item => {
-        try {
-          const totp = new OTPAuth.TOTP({
-            secret: OTPAuth.Secret.fromBase32(item.secret.replace(/\s+/g, '')),
-            digits: item.digits,
-            period: item.period,
-            algorithm: 'SHA1',
-          });
-          item.token = totp.generate();
-          item.remain = item.period - (Math.floor(now) % item.period);
-        } catch {
-          item.token = '------';
-          item.remain = 0;
-        }
-      });
-    }
-    setInterval(updateTokens, 1000);
-
-    // 新增密钥
-    function addKey() {
-      if (!state.newKey.secret) return alert('密钥不能为空');
-      state.keyList.push({
-        ...state.newKey,
-        id: genId(),
-        digits: Number(state.newKey.digits) || 6,
-        period: Number(state.newKey.period) || 30,
-        token: '',
-        remain: 0,
-      });
-      state.showAdd = false;
-      state.newKey = { remark: '', secret: '', digits: 6, period: 30 };
-      save();
-      updateTokens();
-    }
-    // 删除密钥
-    function removeKey(id) {
-      state.keyList = state.keyList.filter(x => x.id !== id);
-      save();
-    }
-    // 复制验证码
-    function copyToken(val) {
-      navigator.clipboard.writeText(val);
-      alert('已复制: ' + val);
-    }
-    // 导出
-    function exportKeys() {
-      const str = JSON.stringify(state.keyList, null, 2);
-      const blob = new Blob([str], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'totp-keys.json';
-      a.click();
-    }
-    // 导入
-    function importKeys() {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.json';
-      input.onchange = e => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = e => {
-          try {
-            const arr = JSON.parse(e.target.result);
-            if (Array.isArray(arr)) {
-              state.keyList = arr.map(x => ({ ...x, id: genId() }));
-              save();
-              updateTokens();
-            } else {
-              alert('格式不正确');
-            }
-          } catch {
-            alert('导入失败，文件格式错误');
-          }
-        };
-        reader.readAsText(file);
-      };
-      input.click();
-    }
-
-    onMounted(() => {
-      load();
-      updateTokens();
-    });
-
-    return {
-      ...toRefs(state),
-      addKey,
-      removeKey,
-      copyToken,
-      exportKeys,
-      importKeys,
-    };
+function truncateTo(str, digits) {
+  if (str.length <= digits) {
+    return str;
   }
-}).mount('#app');
+
+  return str.slice(-digits);
+}
+
+function parseURLSearch(search) {
+  const queryParams = search.substr(1).split('&').reduce(function (q, query) {
+    const chunks = query.split('=');
+    const key = chunks[0];
+    let value = decodeURIComponent(chunks[1]);
+    value = isNaN(Number(value)) ? value : Number(value);
+    return (q[key] = value, q);
+  }, {});
+
+  return queryParams;
+}
+
+const app = Vue.createApp({
+  data() {
+    return {
+      secret_key: 'JBSWY3DPEHPK3PXP',
+      digits: 6,
+      period: 30,
+      algorithm: 'SHA1',
+      updatingIn: 30,
+      token: null,
+      clipboardButton: null,
+    };
+  },
+
+  mounted: function () {
+    this.getKeyFromUrl();
+    this.getQueryParameters()
+    this.update();
+
+    this.intervalHandle = setInterval(this.update, 1000);
+
+    this.clipboardButton = new ClipboardJS('#clipboard-button');
+  },
+
+  destroyed: function () {
+    clearInterval(this.intervalHandle);
+  },
+
+  computed: {
+    totp: function () {
+      return new OTPAuth.TOTP({
+        algorithm: this.algorithm,
+        digits: this.digits,
+        period: this.period,
+        secret: OTPAuth.Secret.fromBase32(stripSpaces(this.secret_key)),
+      });
+    }
+  },
+
+  methods: {
+    update: function () {
+      this.updatingIn = this.period - (getCurrentSeconds() % this.period);
+      this.token = truncateTo(this.totp.generate(), this.digits);
+    },
+
+    getKeyFromUrl: function () {
+      const key = document.location.hash.replace(/[#\/]+/, '');
+
+      if (key.length > 0) {
+        this.secret_key = key;
+      }
+    },
+    getQueryParameters: function () {
+      const queryParams = parseURLSearch(window.location.search);
+
+      if (queryParams.key) {
+        this.secret_key = queryParams.key;
+      }
+
+      if (queryParams.digits) {
+        this.digits = queryParams.digits;
+      }
+
+      if (queryParams.period) {
+        this.period = queryParams.period;
+      }
+
+      if (queryParams.algorithm) {
+        this.algorithm = queryParams.algorithm;
+      }
+    }
+  }
+});
+
+app.mount('#app');
