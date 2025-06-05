@@ -29,22 +29,14 @@ const app = Vue.createApp({
   data() {
     return {
       keys: [], // Array to store multiple key entries
-      newKey: { // Data for the "add new key" form
-        id: null,
-        name: '',
-        secret: '',
-        digits: 6,
-        period: 30,
-        algorithm: 'SHA1',
-        // token and updatingIn are per-key, not for the form
-      },
+      // newKey (for single add) is removed as per request
       batchSecretsInput: '', // For the textarea input
       batchDefaultSettings: { // Default settings for batch adding
         digits: 6,
         period: 30,
-        algorithm: 'SHA1',
+        algorithm: 'SHA1', // Algorithm is now fixed to SHA1 for batch add
       },
-      activeTab: 'single', // 'single' or 'batch'
+      // activeTab is removed as single add is removed
       intervalHandle: null,
       toastTimeout: null,
     };
@@ -72,8 +64,8 @@ const app = Vue.createApp({
           }
           const totp = new OTPAuth.TOTP({
             issuer: keyEntry.name || '',
-            label: 'OTPAuth:' + (keyEntry.name || keyEntry.secret.substring(0,6)), // More unique label
-            algorithm: keyEntry.algorithm || 'SHA1',
+            label: 'OTPAuth:' + (keyEntry.name || keyEntry.secret.substring(0,6)),
+            algorithm: keyEntry.algorithm || 'SHA1', // Use key's own algorithm or default to SHA1
             digits: parseInt(keyEntry.digits, 10) || 6,
             period: parseInt(keyEntry.period, 10) || 30,
             secret: OTPAuth.Secret.fromBase32(stripSpaces(keyEntry.secret)),
@@ -88,36 +80,7 @@ const app = Vue.createApp({
       });
     },
 
-    addKey: function () {
-      const secretTrimmed = this.newKey.secret.trim();
-      if (!secretTrimmed) {
-        this.showToast("密钥不能为空！", true);
-        return;
-      }
-      try {
-        OTPAuth.Secret.fromBase32(stripSpaces(secretTrimmed));
-      } catch (e) {
-        this.showToast("无效的Base32密钥格式！请检查密钥。", true);
-        console.error("Invalid secret format:", e);
-        return;
-      }
-
-      const keyToAdd = {
-        id: generateUUID(),
-        name: this.newKey.name.trim() || '', // Default to empty string if no name
-        secret: stripSpaces(secretTrimmed.toUpperCase()),
-        digits: parseInt(this.newKey.digits, 10) || 6,
-        period: parseInt(this.newKey.period, 10) || 30,
-        algorithm: this.newKey.algorithm || 'SHA1',
-        token: '',
-        updatingIn: 0,
-      };
-      this.keys.push(keyToAdd);
-      this.saveKeysToStorage();
-      this.resetNewKeyForm();
-      this.updateAllTokens(); 
-      this.showToast("密钥添加成功!");
-    },
+    // addKey method is removed as per request (only batch add remains)
 
     addKeysInBatch: function() {
       const secrets = this.batchSecretsInput.split('\n');
@@ -139,9 +102,11 @@ const app = Vue.createApp({
             secret: stripSpaces(secretTrimmed.toUpperCase()),
             digits: parseInt(this.batchDefaultSettings.digits, 10) || 6,
             period: parseInt(this.batchDefaultSettings.period, 10) || 30,
-            algorithm: this.batchDefaultSettings.algorithm || 'SHA1',
+            algorithm: 'SHA1', // Algorithm fixed to SHA1 for batch add
             token: '',
             updatingIn: 0,
+            isEditingName: false, // For inline name editing
+            editingNameValue: '', // For inline name editing
           };
           this.keys.push(keyToAdd);
           addedCount++;
@@ -156,7 +121,7 @@ const app = Vue.createApp({
         this.updateAllTokens();
       }
 
-      this.batchSecretsInput = ''; // Clear textarea
+      this.batchSecretsInput = ''; 
       
       let message = '';
       if (addedCount > 0) {
@@ -171,34 +136,48 @@ const app = Vue.createApp({
       this.showToast(message, failedCount > 0 && addedCount === 0);
     },
     
-    editKeyName: function(keyEntry) {
-        const newName = prompt(`为密钥 "${keyEntry.secret.substring(0,10)}..." 输入新名称:`, keyEntry.name);
-        if (newName !== null) { // null if user pressed cancel
-            keyEntry.name = newName.trim();
-            this.saveKeysToStorage();
-            this.showToast("名称已更新。");
+    startEditKeyName: function(keyEntry, index) {
+      this.keys.forEach(k => k.isEditingName = false); // Close other editing inputs
+      keyEntry.editingNameValue = keyEntry.name;
+      keyEntry.isEditingName = true;
+      this.$nextTick(() => { // Wait for DOM update
+        const inputEl = document.getElementById('name-input-' + keyEntry.id);
+        if (inputEl) {
+          inputEl.focus();
         }
+      });
+    },
+
+    saveKeyName: function(keyEntry) {
+      if (keyEntry.isEditingName) { // Only save if it was actually in editing mode
+        keyEntry.name = keyEntry.editingNameValue.trim();
+        keyEntry.isEditingName = false;
+        this.saveKeysToStorage();
+        this.showToast("名称已更新。");
+      }
     },
 
     removeKey: function (index) {
-      if (window.confirm(`确定要删除密钥 "${this.keys[index].name || '该密钥'}" 吗? 这将从本地存储中移除它。`)) {
+      const keyToConfirm = this.keys[index];
+      // Using a custom modal for confirm is better. For now, window.confirm
+      const userName = keyToConfirm.name || `密钥 ${index + 1}`;
+      if (window.confirm(`确定要删除密钥 "${userName}" (${keyToConfirm.secret.substring(0,10)}...) 吗? 这将从本地存储中移除它。`)) {
         this.keys.splice(index, 1);
         this.saveKeysToStorage();
         this.showToast("密钥已删除。");
       }
     },
 
-    resetNewKeyForm: function () {
-      this.newKey.name = '';
-      this.newKey.secret = '';
-      this.newKey.digits = 6;
-      this.newKey.period = 30;
-      this.newKey.algorithm = 'SHA1';
-    },
+    // resetNewKeyForm is removed as single add is removed
 
     saveKeysToStorage: function () {
       try {
-        localStorage.setItem('totpKeys_v2', JSON.stringify(this.keys));
+        // Before saving, remove temporary editing state properties
+        const keysToSave = this.keys.map(k => {
+            const { isEditingName, editingNameValue, ...rest } = k;
+            return rest;
+        });
+        localStorage.setItem('totpKeys_v2_grid', JSON.stringify(keysToSave)); // Changed storage key
       } catch (e) {
         console.error("Error saving keys to localStorage:", e);
         this.showToast("无法保存密钥到本地存储。", true);
@@ -207,7 +186,7 @@ const app = Vue.createApp({
 
     loadKeysFromStorage: function () {
       try {
-        const storedKeys = localStorage.getItem('totpKeys_v2');
+        const storedKeys = localStorage.getItem('totpKeys_v2_grid'); // Changed storage key
         if (storedKeys) {
           const parsedKeys = JSON.parse(storedKeys);
           this.keys = parsedKeys.map(key => ({
@@ -219,26 +198,53 @@ const app = Vue.createApp({
             algorithm: key.algorithm || 'SHA1',
             token: '', 
             updatingIn: 0,
+            isEditingName: false, // Initialize editing state
+            editingNameValue: key.name || '', // Initialize editing value
           }));
         } else {
-          const oldSecret = localStorage.getItem('totp_secret_key');
-          if (oldSecret) {
+          // Migration from totpKeys_v2 (previous multi-key, non-grid version)
+          const oldMultiStoredKeys = localStorage.getItem('totpKeys_v2');
+          if (oldMultiStoredKeys) {
+              const oldParsed = JSON.parse(oldMultiStoredKeys);
+              this.keys = oldParsed.map(key => ({
+                id: key.id || generateUUID(),
+                name: key.name || '',
+                secret: key.secret || '',
+                digits: parseInt(key.digits, 10) || 6,
+                period: parseInt(key.period, 10) || 30,
+                algorithm: key.algorithm || 'SHA1',
+                token: '',
+                updatingIn: 0,
+                isEditingName: false,
+                editingNameValue: key.name || '',
+              }));
+              this.saveKeysToStorage(); // Save in new format
+              localStorage.removeItem('totpKeys_v2'); // Remove old multi-key storage
+              this.showToast("密钥已迁移到新布局格式。");
+              return; // Exit after migration
+          }
+          
+          // Migration from original single key format
+          const oldSingleSecret = localStorage.getItem('totp_secret_key');
+          if (oldSingleSecret) {
             this.keys.push({
               id: generateUUID(),
               name: '默认密钥 (旧版)',
-              secret: oldSecret,
+              secret: oldSingleSecret,
               digits: parseInt(localStorage.getItem('totp_digits'), 10) || 6,
               period: parseInt(localStorage.getItem('totp_period'), 10) || 30,
               algorithm: localStorage.getItem('totp_algorithm') || 'SHA1',
               token: '',
               updatingIn: 0,
+              isEditingName: false,
+              editingNameValue: '默认密钥 (旧版)',
             });
             localStorage.removeItem('totp_secret_key');
             localStorage.removeItem('totp_digits');
             localStorage.removeItem('totp_period');
             localStorage.removeItem('totp_algorithm');
             this.saveKeysToStorage(); 
-            this.showToast("旧版密钥已成功迁移。");
+            this.showToast("旧版单密钥已成功迁移。");
           }
         }
       } catch (e) {
