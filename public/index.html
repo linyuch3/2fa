@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>2FA登录验证码获取</title>
+  <title>多密钥 TOTP 生成器</title>
   <link rel="stylesheet" href="css/bulma-0.9.4.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
@@ -138,33 +138,45 @@
       to { opacity: 1; }
     }
 
-    .delete-button {
-      background-color: var(--danger-color); /* More visible background */
-      color: white; /* White icon for better contrast */
+    .card-actions {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        display: flex;
+        gap: 4px;
+    }
+    
+    .action-button {
+      color: #aaa;
       border: none;
       border-radius: 50%; 
       width: 26px; 
       height: 26px;
       padding: 0;
       transition: all 0.2s;
-      position: absolute;
-      top: 8px; /* Adjusted for visibility */
-      right: 8px; /* Adjusted for visibility */
       display: flex;
       align-items: center;
       justify-content: center;
-      opacity: 0.7; /* Initial opacity */
-      z-index: 5; /* Ensure it's above other elements if overlap occurs */
+      opacity: 0.6;
+      background-color: #f0f0f0;
+      cursor: pointer;
     }
-    .key-entry-card:hover .delete-button {
-        opacity: 1; 
+    .key-entry-card:hover .action-button {
+        opacity: 1;
     }
-    .delete-button:hover {
-      background-color: var(--danger-dark); /* Darker on hover */
+    .action-button:hover {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+    .action-button.delete-button:hover {
+      background-color: var(--danger-color);
       color: white;
-      transform: scale(1.1);
     }
-    .delete-button .icon {
+    .action-button.qr-button:hover {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    .action-button .icon {
         margin: 0;
         font-size: 0.7rem; 
     }
@@ -310,6 +322,18 @@
         justify-content: flex-end;
         margin-bottom: 1rem; 
     }
+    
+    /* QR Code Modal Styles */
+    #qrcode-container img {
+        display: block;
+        margin: auto;
+        border: 6px solid white;
+        border-radius: 10px;
+    }
+    .modal-card-title {
+        color: var(--text-color);
+    }
+
   </style>
 </head>
 <body>
@@ -318,7 +342,7 @@
 
   <section id="app" class="section" v-cloak>
     <div class="container">
-      <h1 class="title is-3 has-text-centered">2FA登录验证码获取</h1>
+      <h1 class="title is-3 has-text-centered">多账户 2FA 验证码</h1>
 
       <div class="actions-bar">
           <button v-if="keys.length > 0" class="button is-danger is-outlined is-small" @click="clearAllKeysWithConfirmation">
@@ -329,11 +353,14 @@
 
       <div v-if="keys.length > 0" class="keys-grid">
         <div v-for="(keyEntry, index) in keys" :key="keyEntry.id" class="key-entry-card">
-            <button class="button is-small delete-button" @click="removeKey(index)" title="删除密钥">
-              <span class="icon is-small">
-                <i class="fas fa-times"></i>
-              </span>
-            </button>
+            <div class="card-actions">
+                <button class="button is-small action-button qr-button" @click="showQrCode(keyEntry)" title="显示二维码">
+                    <span class="icon is-small"><i class="fas fa-qrcode"></i></span>
+                </button>
+                <button class="button is-small action-button delete-button" @click="removeKey(index)" title="删除密钥">
+                  <span class="icon is-small"><i class="fas fa-times"></i></span>
+                </button>
+            </div>
             <div v-if="!keyEntry.isEditingName" class="key-name-display" @click="startEditKeyName(keyEntry, index)">
               {{ keyEntry.name || '密钥 ' + (index + 1) }}
               <span class="icon is-small has-text-grey-light ml-1" title="点击编辑名称">
@@ -360,22 +387,22 @@
       </div>
        <div v-else class="no-keys-message">
         <p class="is-size-5">还没有添加密钥哦！</p>
-        <p>请在下方文本框中粘贴您的密钥可批量添加</p>
+        <p>请在下方文本框中粘贴您的密钥 (每行一个)。</p>
       </div>
 
       <div class="box add-key-section mt-5">
         <h2 class="title is-4 has-text-centered mb-4">添加密钥</h2>
         <div class="field">
-          <label class="label">密钥列表可批量添加</label>
+          <label class="label">密钥列表 (每行一个)</label>
           <div class="control">
             <textarea class="textarea" 
                       v-model="batchSecretsInput" 
                       @paste.prevent="handlePaste" 
                       @blur="processBatchInputOnBlur"
-                      placeholder="BCLQ5FLW3TLOTUXK&#10;admin@gmail.com	X3ID2JRHA6H53JIR&#10;Google:G6RYBUGRDCS74LD4&#10;my-service BCLQ5FLW3TLOTUXK" 
+                      placeholder="BCLQ5FLW3TLOTUXK&#10;anthonywright@stu.sicau.edu.cn	X3ID2JRHA6H53JIR&#10;Google:G6RYBUGRDCS74LD4&#10;my-service BCLQ5FLW3TLOTUXK" 
                       rows="5"></textarea>
           </div>
-          <p class="help">支持格式：<code>密钥</code>, <code>名称:密钥</code>, <code>名称<空格>密钥</code>。</p>
+          <p class="help">支持格式：<code>密钥</code>, <code>名称:密钥</code>, <code>名称\t密钥</code>, <code>名称<空格>密钥</code>。位数(默认6)和周期(默认30)使用默认值。算法固定为SHA1。</p>
         </div>
          <div class="columns is-mobile">
           <div class="column">
@@ -407,28 +434,44 @@
 
       <div class="instructions-card"> 
         <h2 class="title is-5">使用说明</h2>
-        <p><strong>1.</strong> 在上方“密钥列表”文本框中输入或粘贴您的Base32格式密钥，每行一个。支持格式如 <code>密钥</code>、<code>名称:密钥</code>、<code>名称<空格>密钥</code>。</p>
-        <p><strong>2.</strong> 点击“添加输入框中的密钥”按钮，或当输入框失去焦点时，系统将自动尝试添加。验证码位数默认为<strong>6位</strong>，令牌周期默认为<strong>30秒</strong>。</p>
+        <p><strong>1.</strong> 在上方“密钥列表”文本框中输入或粘贴您的Base32格式密钥，每行一个。支持格式如 <code>密钥</code>、<code>名称:密钥</code>、<code>名称\t密钥</code> (\t 代表制表符) 或 <code>名称<空格>密钥</code>。</p>
+        <p><strong>2.</strong> 点击“添加输入框中的密钥”按钮，或当输入框失去焦点时，系统将自动尝试添加。验证码位数默认为<strong>6位</strong>，令牌周期默认为<strong>30秒</strong>。算法固定为<strong>SHA1</strong>。</p>
         <p><strong>3.</strong> 系统会自动为每个有效密钥生成验证码，并倒计时显示剩余有效时间。</p>
         <p><strong>4.</strong> 点击生成的<strong>数字验证码</strong>即可复制到剪贴板。点击密钥卡片上的<strong>名称</strong>可以进行修改。点击卡片右上角的 <i class="fas fa-times has-text-danger"></i> 图标可直接删除密钥。</p>
         <p><strong>5.</strong> 所有数据均保存在您的浏览器本地，不会上传到任何服务器。</p>
       </div>
 
     </div>
+
+    <!-- QR Code Modal -->
+    <div class="modal" :class="{'is-active': isQrModalActive}">
+        <div class="modal-background" @click="closeQrModal"></div>
+        <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">扫描二维码添加密钥</p>
+            <button class="delete" aria-label="close" @click="closeQrModal"></button>
+        </header>
+        <section class="modal-card-body is-flex is-flex-direction-column is-align-items-center">
+            <div id="qrcode-container"></div>
+            <p class="has-text-centered mt-2 has-text-weight-bold">{{ qrCodeKeyName }}</p>
+        </section>
+        </div>
+    </div>
+
   </section>
 
   <footer class="page-footer"> 
     <div class="container">
       <div class="content has-text-centered">
-        <p>Built by <a href="https://hailizi.456785.xyz" target="_blank">海蛎子</a></p>
+        <p>Built by <a href="https://hailizi.hkg.email" target="_blank">海蛎子</a></p>
       </div>
     </div>
   </footer>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <script src="js/assets/vue-3.4.20.global.prod.js"></script>
   <script src="js/assets/otpauth-9.1.3.min.js"></script>
-  <script src="js/app.js?v=1.9"></script> <!-- Incremented version -->
+  <script src="js/app.js?v=1.10"></script> <!-- Incremented version -->
   <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </body>
 </html>
-
