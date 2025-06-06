@@ -34,6 +34,8 @@ const app = Vue.createApp({
       },
       intervalHandle: null,
       toastTimeout: null,
+      isQrModalActive: false, // Controls the QR code modal visibility
+      qrCodeKeyName: '', // Holds the name of the key for the QR modal
     };
   },
 
@@ -59,7 +61,7 @@ const app = Vue.createApp({
           }
           const totp = new OTPAuth.TOTP({
             issuer: keyEntry.name || '',
-            label: 'OTPAuth:' + (keyEntry.name || keyEntry.secret.substring(0,6)),
+            label: keyEntry.name || 'OTPAuth',
             algorithm: 'SHA1', 
             digits: parseInt(keyEntry.digits, 10) || 6,
             period: parseInt(keyEntry.period, 10) || 30,
@@ -78,7 +80,7 @@ const app = Vue.createApp({
     processBatchInput: function(isFromPaste = false) {
       const currentInput = this.batchSecretsInput; 
       if (!currentInput.trim()) {
-        if (!isFromPaste && !document.activeElement.classList.contains('delete-button')) { // Avoid toast on blur if it's just empty
+        if (!isFromPaste && !document.activeElement.classList.contains('action-button')) { 
             this.showToast("输入框为空，请输入密钥。", true); 
         }
         return;
@@ -116,9 +118,8 @@ const app = Vue.createApp({
 
         if (parts && parts.length > 1) {
             name = parts[0].trim(); 
-            secretPart = parts.slice(1).join(secretPart.includes('\t') ? '\t' : (secretPart.includes(' ') && parts.length > 1 && parts[0].includes('@') ? ' ' : ':')).trim(); // Refined join
+            secretPart = parts.slice(1).join(secretPart.includes('\t') ? '\t' : (secretPart.includes(' ') && parts.length > 1 && parts[0].includes('@') ? ' ' : ':')).trim();
         }
-
 
         try {
           const strippedSecret = stripSpaces(secretPart);
@@ -166,21 +167,17 @@ const app = Vue.createApp({
       if ((addedCount > 0 || failedCount > 0) || (currentInput.trim() && addedCount === 0 && failedCount === 0) ){
            if (!message && currentInput.trim()) message = "没有新的有效密钥被添加。请检查格式。";
            if (message) this.showToast(message, failedCount > 0 && addedCount === 0);
-      } else if (!currentInput.trim() && !isFromPaste) {
-          // Do nothing if input was empty and it wasn't a paste event, and not from explicit button click
       }
     },
     
     processBatchInputOnBlur: function() {
-        // Only process if there's text and the active element is not a delete button
-        // This helps prevent processing if the blur was due to clicking a delete button inside a card
-        if (this.batchSecretsInput.trim() && (!document.activeElement || !document.activeElement.classList.contains('delete-button'))) {
+        if (this.batchSecretsInput.trim() && (!document.activeElement || !document.activeElement.closest('.action-button'))) {
             this.processBatchInput(false);
         }
     },
 
     handlePaste: function(event) {
-        event.preventDefault();
+        event.preventDefault(); 
         const pasteData = (event.clipboardData || window.clipboardData).getData('text');
         this.batchSecretsInput = pasteData; 
         this.$nextTick(() => { 
@@ -228,13 +225,52 @@ const app = Vue.createApp({
         }
     },
 
+    showQrCode: function(keyEntry) {
+        try {
+            const totp = new OTPAuth.TOTP({
+                issuer: keyEntry.name || 'TOTP Generator', // Use name as issuer, fallback
+                label: keyEntry.name || undefined, // Use name as label if available
+                algorithm: keyEntry.algorithm || 'SHA1',
+                digits: parseInt(keyEntry.digits, 10) || 6,
+                period: parseInt(keyEntry.period, 10) || 30,
+                secret: OTPAuth.Secret.fromBase32(stripSpaces(keyEntry.secret)),
+            });
+
+            const uri = totp.toString();
+            this.qrCodeKeyName = keyEntry.name || keyEntry.secret.substring(0, 16) + '...';
+            this.isQrModalActive = true;
+
+            this.$nextTick(() => {
+                const container = document.getElementById('qrcode-container');
+                if (container) {
+                    container.innerHTML = ''; // Clear previous QR code
+                    const qr = qrcode(0, 'M'); // type 0: auto-detect, 'M' for medium error correction
+                    qr.addData(uri);
+                    qr.make();
+                    container.innerHTML = qr.createImgTag(5, 8); // (module size, margin)
+                }
+            });
+        } catch (error) {
+            console.error("Could not generate QR code URI:", error);
+            this.showToast("生成二维码失败，密钥格式可能不正确。", true);
+        }
+    },
+
+    closeQrModal: function() {
+        this.isQrModalActive = false;
+        const container = document.getElementById('qrcode-container');
+        if (container) {
+            container.innerHTML = ''; // Clear QR code on close
+        }
+    },
+
     saveKeysToStorage: function () {
       try {
         const keysToSave = this.keys.map(k => {
             const { isEditingName, editingNameValue, ...rest } = k;
             return rest;
         });
-        localStorage.setItem('totpKeys_v5_2_final', JSON.stringify(keysToSave));
+        localStorage.setItem('totpKeys_v5_3_qr', JSON.stringify(keysToSave)); // New storage key
       } catch (e) {
         console.error("Error saving keys to localStorage:", e);
         this.showToast("无法保存密钥到本地存储。", true);
@@ -243,7 +279,7 @@ const app = Vue.createApp({
 
     loadKeysFromStorage: function () {
       try {
-        const storedKeys = localStorage.getItem('totpKeys_v5_2_final');
+        const storedKeys = localStorage.getItem('totpKeys_v5_3_qr'); // New storage key
         if (storedKeys) {
           const parsedKeys = JSON.parse(storedKeys);
           this.keys = parsedKeys.map(key => ({
@@ -259,36 +295,19 @@ const app = Vue.createApp({
             editingNameValue: key.name || '', 
           }));
         } else {
-          // Migration from 'totpKeys_v5_final' (if there was a typo or older version)
-          const prevV5Keys = localStorage.getItem('totpKeys_v5_final'); // Check for the exact previous key name
-           if (prevV5Keys) {
-            const parsedV5 = JSON.parse(prevV5Keys);
-            this.keys = parsedV5.map(key => ({
-              ...key,
-              id: key.id || generateUUID(),
-              name: key.name || '',
-              isEditingName: false,
-              editingNameValue: key.name || '',
-            }));
-            this.saveKeysToStorage(); 
-            localStorage.removeItem('totpKeys_v5_final'); 
-            this.showToast("密钥已从先前V5版本迁移。");
-            return;
-          }
-          const prevV4Keys = localStorage.getItem('totpKeys_v4_grid_auto');
-          if (prevV4Keys) {
-            const parsedV4 = JSON.parse(prevV4Keys);
-            this.keys = parsedV4.map(key => ({
-              ...key,
-              id: key.id || generateUUID(),
-              name: key.name || '',
-              isEditingName: false,
-              editingNameValue: key.name || '',
-            }));
-            this.saveKeysToStorage();
-            localStorage.removeItem('totpKeys_v4_grid_auto');
-            this.showToast("密钥已从 V4 迁移。");
-            return;
+          // Add migration logic from older versions if needed
+          const prevV5_2Keys = localStorage.getItem('totpKeys_v5_2_final');
+          if (prevV5_2Keys) {
+              const parsedV5_2 = JSON.parse(prevV5_2Keys);
+              this.keys = parsedV5_2.map(key => ({
+                  ...key,
+                  id: key.id || generateUUID(),
+                  isEditingName: false,
+                  editingNameValue: key.name || '',
+              }));
+              this.saveKeysToStorage();
+              localStorage.removeItem('totpKeys_v5_2_final');
+              this.showToast("密钥已迁移至 V5.3 版本。");
           }
         }
       } catch (e) {
