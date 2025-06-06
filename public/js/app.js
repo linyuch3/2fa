@@ -26,9 +26,9 @@ function generateUUID() {
 const app = Vue.createApp({
   data() {
     return {
-      keys: [], 
-      batchSecretsInput: '', 
-      batchDefaultSettings: { 
+      keys: [],
+      batchSecretsInput: '',
+      batchDefaultSettings: {
         digits: 6,
         period: 30,
       },
@@ -57,12 +57,12 @@ const app = Vue.createApp({
           if (!keyEntry.secret || stripSpaces(keyEntry.secret).length === 0) {
             keyEntry.token = "密钥无效";
             keyEntry.updatingIn = (parseInt(keyEntry.period, 10) || 30);
-            return; 
+            return;
           }
           const totp = new OTPAuth.TOTP({
             issuer: keyEntry.name || '',
             label: keyEntry.name || 'OTPAuth',
-            algorithm: 'SHA1', 
+            algorithm: 'SHA1',
             digits: parseInt(keyEntry.digits, 10) || 6,
             period: parseInt(keyEntry.period, 10) || 30,
             secret: OTPAuth.Secret.fromBase32(stripSpaces(keyEntry.secret)),
@@ -71,17 +71,17 @@ const app = Vue.createApp({
           keyEntry.updatingIn = (parseInt(keyEntry.period, 10) || 30) - (getCurrentSeconds() % (parseInt(keyEntry.period, 10) || 30));
         } catch (error) {
           console.error("Error generating token for key:", keyEntry.name || keyEntry.secret, error);
-          keyEntry.token = "格式错误"; 
+          keyEntry.token = "格式错误";
           keyEntry.updatingIn = (parseInt(keyEntry.period, 10) || 30);
         }
       });
     },
 
     processBatchInput: function(isFromPaste = false) {
-      const currentInput = this.batchSecretsInput; 
+      const currentInput = this.batchSecretsInput;
       if (!currentInput.trim()) {
-        if (!isFromPaste && !document.activeElement.classList.contains('action-button')) { 
-            this.showToast("输入框为空，请输入密钥。", true); 
+        if (!isFromPaste && !document.activeElement.classList.contains('action-button')) {
+            this.showToast("输入框为空，请输入密钥。", true);
         }
         return;
       }
@@ -94,48 +94,46 @@ const app = Vue.createApp({
       lines.forEach((line, index) => {
         let name = '';
         let secretPart = line.trim();
-        
-        if (!secretPart) return; 
+
+        if (!secretPart) return;
 
         let parts;
-        if (secretPart.includes('\t')) { 
+        // First, check for a tab separator
+        if (secretPart.includes('\t')) {
             parts = secretPart.split('\t');
-        } else {
-            const lastSpaceIndex = secretPart.lastIndexOf(' ');
-            if (lastSpaceIndex > 0 && lastSpaceIndex < secretPart.length -1 ) { 
-                const potentialKey = secretPart.substring(lastSpaceIndex + 1);
-                const potentialName = secretPart.substring(0, lastSpaceIndex);
-                if (/^[A-Z2-7]+=*$/.test(stripSpaces(potentialKey.toUpperCase()))) {
-                     parts = [potentialName, potentialKey];
-                }
-            }
-            
-            if (!parts && secretPart.includes(':')) { 
-                const firstColonIndex = secretPart.indexOf(':');
-                parts = [secretPart.substring(0, firstColonIndex), secretPart.substring(firstColonIndex + 1)];
-            }
+        }
+        // MODIFIED: Removed the logic that splits by space.
+        // Now only checks for a colon if no tab was found.
+        else if (secretPart.includes(':')) {
+            const firstColonIndex = secretPart.indexOf(':');
+            parts = [secretPart.substring(0, firstColonIndex), secretPart.substring(firstColonIndex + 1)];
         }
 
+        // If parts were found (split by tab or colon), separate name and secret.
         if (parts && parts.length > 1) {
-            name = parts[0].trim(); 
-            secretPart = parts.slice(1).join(secretPart.includes('\t') ? '\t' : (secretPart.includes(' ') && parts.length > 1 && parts[0].includes('@') ? ' ' : ':')).trim();
+            name = parts[0].trim();
+            secretPart = parts.slice(1).join(secretPart.includes('\t') ? '\t' : ':').trim();
         }
 
         try {
+          // The entire secretPart (with spaces if any) is now processed.
+          // The stripSpaces function will remove them before validation.
           const strippedSecret = stripSpaces(secretPart);
           if (!strippedSecret) throw new Error("Secret part is empty after stripping spaces.");
-          OTPAuth.Secret.fromBase32(strippedSecret); 
-          
+
+          // Validate the Base32 secret key
+          OTPAuth.Secret.fromBase32(strippedSecret);
+
           const keyToAdd = {
             id: generateUUID(),
             name: name || `密钥 ${this.keys.length + newKeysToAdd.length + 1}`,
             secret: strippedSecret.toUpperCase(),
             digits: parseInt(this.batchDefaultSettings.digits, 10) || 6,
             period: parseInt(this.batchDefaultSettings.period, 10) || 30,
-            algorithm: 'SHA1', 
+            algorithm: 'SHA1',
             token: '',
             updatingIn: 0,
-            isEditingName: false, 
+            isEditingName: false,
             editingNameValue: name || `密钥 ${this.keys.length + newKeysToAdd.length + 1}`,
           };
           newKeysToAdd.push(keyToAdd);
@@ -144,18 +142,18 @@ const app = Vue.createApp({
           console.warn(`批量添加失败 (行 ${index + 1}): "${line}". 原因: ${e.message}`);
         }
       });
-      
+
       if (newKeysToAdd.length > 0) {
         this.keys.push(...newKeysToAdd);
         this.saveKeysToStorage();
         this.updateAllTokens();
-        addedCount = newKeysToAdd.length; 
+        addedCount = newKeysToAdd.length;
       }
-      
+
       if (addedCount > 0 || failedCount > 0 || currentInput.trim()) {
-         this.batchSecretsInput = ''; 
+         this.batchSecretsInput = '';
       }
-      
+
       let message = '';
       if (addedCount > 0) {
         message += `成功添加 ${addedCount} 个密钥。`;
@@ -163,13 +161,13 @@ const app = Vue.createApp({
       if (failedCount > 0) {
         message += (message ? ' ' : '') + `${failedCount} 个密钥添加失败 (格式或内容无效)。`;
       }
-      
+
       if ((addedCount > 0 || failedCount > 0) || (currentInput.trim() && addedCount === 0 && failedCount === 0) ){
            if (!message && currentInput.trim()) message = "没有新的有效密钥被添加。请检查格式。";
            if (message) this.showToast(message, failedCount > 0 && addedCount === 0);
       }
     },
-    
+
     processBatchInputOnBlur: function() {
         if (this.batchSecretsInput.trim() && (!document.activeElement || !document.activeElement.closest('.action-button'))) {
             this.processBatchInput(false);
@@ -177,23 +175,23 @@ const app = Vue.createApp({
     },
 
     handlePaste: function(event) {
-        event.preventDefault(); 
+        event.preventDefault();
         const pasteData = (event.clipboardData || window.clipboardData).getData('text');
-        this.batchSecretsInput = pasteData; 
-        this.$nextTick(() => { 
-             this.processBatchInput(true); 
+        this.batchSecretsInput = pasteData;
+        this.$nextTick(() => {
+             this.processBatchInput(true);
         });
     },
-    
+
     startEditKeyName: function(keyEntry, index) {
-      this.keys.forEach((k, i) => { 
+      this.keys.forEach((k, i) => {
         if (k.isEditingName && i !== index) {
             this.saveKeyName(k);
         }
         k.isEditingName = (i === index);
       });
       keyEntry.editingNameValue = keyEntry.name;
-      this.$nextTick(() => { 
+      this.$nextTick(() => {
         const inputEl = document.getElementById('name-input-' + keyEntry.id);
         if (inputEl) {
           inputEl.focus();
@@ -203,7 +201,7 @@ const app = Vue.createApp({
     },
 
     saveKeyName: function(keyEntry) {
-      if (keyEntry.isEditingName) { 
+      if (keyEntry.isEditingName) {
         keyEntry.name = keyEntry.editingNameValue.trim();
         keyEntry.isEditingName = false;
         this.saveKeysToStorage();
@@ -283,16 +281,16 @@ const app = Vue.createApp({
         if (storedKeys) {
           const parsedKeys = JSON.parse(storedKeys);
           this.keys = parsedKeys.map(key => ({
-            id: key.id || generateUUID(), 
+            id: key.id || generateUUID(),
             name: key.name || '',
             secret: key.secret || '',
             digits: parseInt(key.digits, 10) || 6,
             period: parseInt(key.period, 10) || 30,
-            algorithm: key.algorithm || 'SHA1', 
-            token: '', 
+            algorithm: key.algorithm || 'SHA1',
+            token: '',
             updatingIn: 0,
-            isEditingName: false, 
-            editingNameValue: key.name || '', 
+            isEditingName: false,
+            editingNameValue: key.name || '',
           }));
         } else {
           // Add migration logic from older versions if needed
@@ -312,7 +310,7 @@ const app = Vue.createApp({
         }
       } catch (e) {
         console.error("Error loading keys from localStorage:", e);
-        this.keys = []; 
+        this.keys = [];
         this.showToast("无法从本地存储加载密钥。请检查浏览器控制台获取更多信息。", true);
       }
     },
