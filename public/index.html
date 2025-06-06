@@ -6,6 +6,8 @@
   <title>多密钥 TOTP 生成器</title>
   <link rel="stylesheet" href="css/bulma-0.9.4.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Replaced Font Awesome JS kit with CSS for reliability -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
     :root {
       --primary-color: #3273dc;
@@ -177,12 +179,12 @@
     .qr-code-trigger .button {
         background: none;
         border: none;
-        color: #afb8c6; /* A muted, more visible grey */
-        opacity: 0.7;
+        color: #6e7a8a; /* A more visible muted color */
+        opacity: 0.9; /* More visible by default */
         transition: all 0.2s ease;
         padding: 0;
-        height: 24px;
-        width: 24px;
+        height: 28px; /* Larger click area */
+        width: 28px;
         cursor: pointer;
     }
     .qr-code-trigger .button:hover {
@@ -191,9 +193,9 @@
         transform: scale(1.15);
     }
     .qr-code-trigger .icon {
-        font-size: 1.1rem; /* Adjust icon size */
-        height: 1.1rem;
-        width: 1.1rem;
+        font-size: 1.4rem; /* Larger icon for better visibility */
+        height: 1.4rem;
+        width: 1.4rem;
     }
     
     .button.is-primary, .button.is-success, .button.is-danger { 
@@ -420,7 +422,7 @@
                       placeholder="BCLQ5FLW3TLOTUXK&#10;anthonywright@stu.sicau.edu.cn	X3ID2JRHA6H53JIR&#10;Google:G6RYBUGRDCS74LD4&#10;my-service BCLQ5FLW3TLOTUXK" 
                       rows="5"></textarea>
           </div>
-          <p class="help">支持格式：<code>密钥</code>, code>名称:密钥</code>, <code>名称\t密钥</code>, <code>名称<空格>密钥</code>。位数(默认6)和周期(默认30)使用默认值。算法固定为SHA1。</p>
+          <p class="help">支持格式：<code>密钥</code>, <code>名称:密钥</code>, <code>名称\t密钥</code>, <code>名称<空格>密钥</code>。位数(默认6)和周期(默认30)使用默认值。算法固定为SHA1。</p>
         </div>
          <div class="columns is-mobile">
           <div class="column">
@@ -489,7 +491,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <script src="js/assets/vue-3.4.20.global.prod.js"></script>
   <script src="js/assets/otpauth-9.1.3.min.js"></script>
-  <script src="js/app.js?v=1.10"></script>
-  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <script src="js/app.js?v=1.10"></script> 
+  <!-- Removed old font-awesome kit script -->
 </body>
 </html>
