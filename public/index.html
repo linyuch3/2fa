@@ -137,48 +137,60 @@
       from { opacity: 0.85; }
       to { opacity: 1; }
     }
-
-    .card-actions {
-        position: absolute;
-        top: 6px;
-        right: 6px;
-        display: flex;
-        gap: 4px;
-    }
     
-    .action-button {
-      color: #aaa;
+    .delete-button {
+      background-color: var(--danger-color);
+      color: white;
       border: none;
       border-radius: 50%; 
       width: 26px; 
       height: 26px;
       padding: 0;
       transition: all 0.2s;
+      position: absolute;
+      top: 8px;
+      right: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      opacity: 0.6;
-      background-color: #f0f0f0;
+      opacity: 0.7;
+      z-index: 5;
       cursor: pointer;
     }
-    .key-entry-card:hover .action-button {
+    .key-entry-card:hover .delete-button {
         opacity: 1;
     }
-    .action-button:hover {
-        transform: scale(1.1);
-        opacity: 1;
+    .delete-button:hover {
+      background-color: var(--danger-dark);
+      transform: scale(1.1);
     }
-    .action-button.delete-button:hover {
-      background-color: var(--danger-color);
-      color: white;
-    }
-    .action-button.qr-button:hover {
-      background-color: var(--primary-color);
-      color: white;
-    }
-    .action-button .icon {
+    .delete-button .icon {
         margin: 0;
         font-size: 0.7rem; 
+    }
+
+    .qr-code-trigger {
+        text-align: center;
+        margin-top: 0.5rem;
+    }
+
+    .qr-code-trigger .button {
+        background: transparent;
+        border: none;
+        color: #b5b5b5; /* Light grey, less distracting */
+        opacity: 0.8;
+        transition: all 0.2s ease;
+        padding: 0;
+        height: 28px;
+        width: 28px;
+    }
+    .qr-code-trigger .button:hover {
+        color: var(--primary-color);
+        opacity: 1;
+        transform: scale(1.1);
+    }
+    .qr-code-trigger .icon {
+        font-size: 1.25rem; /* Larger icon for better visibility */
     }
     
     .button.is-primary, .button.is-success, .button.is-danger { 
@@ -353,14 +365,11 @@
 
       <div v-if="keys.length > 0" class="keys-grid">
         <div v-for="(keyEntry, index) in keys" :key="keyEntry.id" class="key-entry-card">
-            <div class="card-actions">
-                <button class="button is-small action-button qr-button" @click="showQrCode(keyEntry)" title="显示二维码">
-                    <span class="icon is-small"><i class="fas fa-qrcode"></i></span>
-                </button>
-                <button class="button is-small action-button delete-button" @click="removeKey(index)" title="删除密钥">
-                  <span class="icon is-small"><i class="fas fa-times"></i></span>
-                </button>
-            </div>
+            <button class="button is-small delete-button" @click="removeKey(index)" title="删除密钥">
+              <span class="icon is-small">
+                <i class="fas fa-times"></i>
+              </span>
+            </button>
             <div v-if="!keyEntry.isEditingName" class="key-name-display" @click="startEditKeyName(keyEntry, index)">
               {{ keyEntry.name || '密钥 ' + (index + 1) }}
               <span class="icon is-small has-text-grey-light ml-1" title="点击编辑名称">
@@ -383,6 +392,12 @@
             <p class="title is-5 token" :class="{ 'pulse': keyEntry.updatingIn <= 5 }" :id="'token-' + keyEntry.id" @click="copyToken(keyEntry.token, keyEntry.id)"> 
               {{ keyEntry.token }}
             </p>
+            <!-- New QR Code trigger location -->
+            <div class="qr-code-trigger">
+                <button class="button" @click="showQrCode(keyEntry)" title="显示二维码">
+                    <span class="icon"><i class="fas fa-qrcode"></i></span>
+                </button>
+            </div>
         </div>
       </div>
        <div v-else class="no-keys-message">
@@ -471,7 +486,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <script src="js/assets/vue-3.4.20.global.prod.js"></script>
   <script src="js/assets/otpauth-9.1.3.min.js"></script>
-  <script src="js/app.js?v=1.10"></script> <!-- Incremented version -->
+  <script src="js/app.js?v=1.10"></script>
   <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </body>
 </html>
