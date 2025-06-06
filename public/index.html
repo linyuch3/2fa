@@ -171,26 +171,29 @@
 
     .qr-code-trigger {
         text-align: center;
-        margin-top: 0.5rem;
+        margin-top: 4px; /* Space between token and QR icon */
     }
 
     .qr-code-trigger .button {
-        background: transparent;
+        background: none;
         border: none;
-        color: #b5b5b5; /* Light grey, less distracting */
-        opacity: 0.8;
+        color: #afb8c6; /* A muted, more visible grey */
+        opacity: 0.7;
         transition: all 0.2s ease;
         padding: 0;
-        height: 28px;
-        width: 28px;
+        height: 24px;
+        width: 24px;
+        cursor: pointer;
     }
     .qr-code-trigger .button:hover {
         color: var(--primary-color);
         opacity: 1;
-        transform: scale(1.1);
+        transform: scale(1.15);
     }
     .qr-code-trigger .icon {
-        font-size: 1.25rem; /* Larger icon for better visibility */
+        font-size: 1.1rem; /* Adjust icon size */
+        height: 1.1rem;
+        width: 1.1rem;
     }
     
     .button.is-primary, .button.is-success, .button.is-danger { 
