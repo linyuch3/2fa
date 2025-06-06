@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>2FA登录验证码获取</title>
+  <title>多密钥 TOTP 生成器</title>
   <link rel="stylesheet" href="css/bulma-0.9.4.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Replaced Font Awesome JS kit with a reliable CSS CDN for better icon display -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
     :root {
@@ -77,7 +78,7 @@
     }
     
     .progress {
-      height: 4px; /* Even slimmer progress bar */
+      height: 4px; 
       border-radius: 2px;
       overflow: hidden;
       margin-top: 0.25rem; 
@@ -95,7 +96,7 @@
 
     .keys-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); /* Further reduced min for denser grid */
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); 
         gap: var(--grid-gap);
         margin-bottom: 2rem;
     }
@@ -108,7 +109,7 @@
       flex-direction: column;
       transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
       position: relative; 
-      padding: 0.7rem; /* Reduced padding */
+      padding: 0.7rem; 
     }
     .key-entry-card:hover {
         transform: translateY(-2px);
@@ -116,10 +117,10 @@
     }
 
     .token {
-      font-size: 1.5rem; /* Reduced token size for smaller card */
+      font-size: 1.5rem; 
       font-weight: 700;
       letter-spacing: 1.5px; 
-      margin: 0; /* Reduced margin */
+      margin: 0; 
       padding: 0.1rem 0;
       background-image: linear-gradient(135deg, var(--primary-color), var(--accent-color));
       -webkit-background-clip: text;
@@ -144,7 +145,7 @@
       color: white;
       border: none;
       border-radius: 50%; 
-      width: 24px; /* Reduced size */
+      width: 24px; 
       height: 24px;
       padding: 0;
       transition: all 0.2s;
@@ -172,18 +173,18 @@
 
     .qr-code-trigger {
         text-align: center;
-        margin-top: 2px; /* Reduced space */
+        margin-top: 4px; /* Space between token and QR icon */
     }
 
     .qr-code-trigger .button {
         background: none;
         border: none;
-        color: #b5b5b5; /* Slightly lighter muted color */
-        opacity: 0.8;
+        color: #b5b5b5; /* A visible muted color */
+        opacity: 0.8; /* Visible by default */
         transition: all 0.2s ease;
         padding: 0;
-        height: 22px; /* Reduced size */
-        width: 22px;
+        height: 24px;
+        width: 24px;
         cursor: pointer;
     }
     .qr-code-trigger .button:hover {
@@ -192,9 +193,9 @@
         transform: scale(1.15);
     }
     .qr-code-trigger .icon {
-        font-size: 1rem; /* Reduced size */
-        height: 1rem;
-        width: 1rem;
+        font-size: 1.2rem; /* Larger, more visible icon */
+        height: 1.2rem;
+        width: 1.2rem;
     }
     
     .button.is-primary, .button.is-success, .button.is-danger { 
@@ -259,7 +260,7 @@
         font-weight: 500; 
         color: var(--text-color);
         margin-bottom: 0.1rem; 
-        font-size: 0.8rem; /* Reduced name size */
+        font-size: 0.8rem; 
         cursor: pointer;
         display: block; 
         padding: 0.1rem 0.2rem;
@@ -283,13 +284,13 @@
         box-sizing: border-box; 
     }
     .secret-key-display {
-        font-size: 0.6rem; /* Reduced secret size */
+        font-size: 0.6rem; 
         color: #bbb; 
         word-break: break-all;
         margin-bottom: 0.2rem; 
         line-height: 1.1;
         text-align: center; 
-        height: 1.1em; /* Only reserve space for one line */
+        height: 1.1em; 
         overflow: hidden;
     }
     .no-keys-message {
@@ -456,7 +457,7 @@
         <p><strong>2.</strong> 点击“添加输入框中的密钥”按钮，或当输入框失去焦点时，系统将自动尝试添加。验证码位数默认为<strong>6位</strong>，令牌周期默认为<strong>30秒。</p>
         <p><strong>3.</strong> 系统会自动为每个有效密钥生成验证码，并倒计时显示剩余有效时间。</p>
         <p><strong>4.</strong> 点击生成的<strong>数字验证码</strong>即可复制到剪贴板。点击密钥卡片上的<strong>名称</strong>可以进行修改。点击卡片右上角的 <i class="fas fa-times has-text-danger"></i> 图标可直接删除密钥。</p>
-        <p><strong>5.</strong> 点击二维码图标可显示用于手机APP扫描的二维码。</p>
+        <p><strong>5.</strong> 点击验证码下方的 <i class="fas fa-qrcode"></i> 图标可显示用于手机APP扫描的二维码。</p>
       </div>
 
     </div>
