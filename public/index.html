@@ -418,10 +418,10 @@
                       v-model="batchSecretsInput" 
                       @paste.prevent="handlePaste" 
                       @blur="processBatchInputOnBlur"
-                      placeholder="BCLQ5FLW3TLOTUXK&#10;admin@gmail.com	X3ID2JRHA6H53JIR&#10;Google:G6RYBUGRDCS74LD4&#10;my-service BCLQ5FLW3TLOTUXK" 
+                      placeholder="BCLQ5FLW3TLOTUXK&#10;admin@gmail.com	X3ID2JRHA6H53JIR&#10;Google:G6RYBUGRDCS74LD4" 
                       rows="5"></textarea>
           </div>
-          <p class="help">支持格式：<code>密钥</code>, <code>名称:密钥</code>, <code>名称<空格>密钥</code>。位数(默认6)和周期(默认30)</p>
+          <p class="help">支持格式：<code>密钥</code>, <code>名称:密钥</code>。也支持制表符 (Tab) 分隔。位数(默认6)和周期(默认30)</p>
         </div>
          <div class="columns is-mobile">
           <div class="column">
@@ -453,8 +453,8 @@
 
       <div class="instructions-card"> 
         <h2 class="title is-5">使用说明</h2>
-        <p><strong>1.</strong> 在上方“密钥列表”文本框中输入或粘贴您的Base32格式密钥，每行一个。支持格式如 <code>密钥</code>、<code>名称:密钥</code>、<code>名称<空格>密钥</code>。</p>
-        <p><strong>2.</strong> 点击“添加输入框中的密钥”按钮，或当输入框失去焦点时，系统将自动尝试添加。验证码位数默认为<strong>6位</strong>，令牌周期默认为<strong>30秒。</p>
+        <p><strong>1.</strong> 在上方“密钥列表”文本框中输入或粘贴您的Base32格式密钥，每行一个。支持格式如 <code>密钥</code> 或 <code>名称:密钥</code> (也支持制表符分隔)。</p>
+        <p><strong>2.</strong> 点击“添加输入框中的密钥”按钮，或当输入框失去焦点时，系统将自动尝试添加。验证码位数默认为<strong>6位</strong>，令牌周期默认为<strong>30秒</strong>。</p>
         <p><strong>3.</strong> 系统会自动为每个有效密钥生成验证码，并倒计时显示剩余有效时间。</p>
         <p><strong>4.</strong> 点击生成的<strong>数字验证码</strong>即可复制到剪贴板。点击密钥卡片上的<strong>名称</strong>可以进行修改。点击卡片右上角的 <i class="fas fa-times has-text-danger"></i> 图标可直接删除密钥。</p>
         <p><strong>5.</strong> 点击验证码下方的 <i class="fas fa-qrcode"></i> 图标可显示用于手机APP扫描的二维码。</p>
