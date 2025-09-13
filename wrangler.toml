@@ -9,12 +9,12 @@ name = "2fa-app"
 [[d1_databases]]
 binding = "DB"
 database_name = "2fa-database"
-database_id = "0b02fb37-2f2e-4901-ade5-eb1c0b40c6e9"
+database_id = "3b257476-683c-48ed-a31f-a4fc2aa9c7a0"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "f890015bac4e4207bc480bbfa1d05ea5"
-preview_id = "f890015bac4e4207bc480bbfa1d05ea5"
+id = "8131c26c757441c18aa59a0f128b800f"
+preview_id = "8131c26c757441c18aa59a0f128b800f"
 
 [build]
 command = "echo 'No build needed'"
