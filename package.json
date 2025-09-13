@@ -1,0 +1,16 @@
+{
+  "name": "2fa-app",
+  "version": "1.0.0",
+  "description": "2FA TOTP Generator with User System",
+  "main": "public/index.html",
+  "scripts": {
+    "dev": "wrangler pages dev public --compatibility-date=2024-01-01",
+    "deploy": "wrangler pages deploy public",
+    "db:init": "wrangler d1 execute 2fa-database --file=./sql/schema.sql",
+    "db:migrations": "wrangler d1 migrations apply 2fa-database"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2FA登录验证码获取</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/x-icon" sizes="16x16" href="/favicon-16x16.ico">
+  <link rel="icon" type="image/x-icon" sizes="32x32" href="/favicon-32x32.ico">
+  <link rel="apple-touch-icon" href="/hailizi.ico">
+  <link rel="stylesheet" href="css/bulma-0.9.4.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Replaced Font Awesome JS kit with a reliable CSS CDN for better icon display -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <style>
+    :root {
+      --primary-color: #3273dc;
+      --primary-dark: #2366d1;
+      --secondary-color: #48c774;
+      --accent-color: #6c5ce7;
+      --text-color: #363636;
+      --bg-color: #f8f9fa;
+      --danger-color: #f14668;
+      --danger-dark: #d93058;
+      --card-bg: white;
+      --card-shadow: 0 6px 25px rgba(0, 0, 0, 0.07);
+      --grid-gap: 0.75rem; 
+    }
+
+    [v-cloak] {
+      display: none;
+    }
+
+    html, body {
+      min-height: 100%;
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-color);
+      overflow-x: hidden;
+      padding-bottom: 2rem; 
+    }
+
+    .container {
+      position: relative;
+      margin-top: 1.5rem;
+      margin-bottom: 1.5rem;
+      z-index: 1;
+      max-width: 1200px !important; 
+    }
+
+    /* 为有用户头像的页面留出顶部空间 */
+    .container.has-user {
+      margin-top: 4rem;
+    }
+    
+    .title {
+      color: var(--primary-color);
+      font-weight: 700;
+      margin-bottom: 2rem;
+    }
+
+    .label {
+      color: var(--text-color);
+      font-weight: 600;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+    }
+
+    .input, .textarea {
+      border: 1px solid #dbdee5;
+      border-radius: 8px;
+      box-shadow: none;
+      transition: all 0.2s;
+      padding: 0.75rem 1rem;
+      height: 2.8rem;
+      background-color: rgba(255, 255, 255, 0.9);
+    }
+    .textarea {
+        min-height: 7em; 
+        height: auto;
+        padding: 1rem;
+    }
+
+    .input:focus, .textarea:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(50, 115, 220, 0.25);
+      background-color: white;
+    }
+    
+    .progress {
+      height: 4px; 
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 0.25rem; 
+      background-color: rgba(234, 234, 234, 0.6);
+    }
+
+    .progress::-webkit-progress-value {
+      background-color: var(--primary-color);
+      transition: width 0.3s ease-out;
+    }
+     .progress::-moz-progress-bar {
+      background-color: var(--primary-color);
+      transition: width 0.3s ease-out;
+    }
+
+    .keys-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); 
+        gap: var(--grid-gap);
+        margin-bottom: 2rem;
+    }
+
+    .key-entry-card {
+      background: var(--card-bg);
+      border-radius: 8px; 
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+      position: relative; 
+      padding: 0.7rem; 
+    }
+    .key-entry-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 7px 18px rgba(0,0,0,0.08);
+    }
+
+    .token {
+      font-size: 1.5rem; 
+      font-weight: 700;
+      letter-spacing: 1.5px; 
+      margin: 0; 
+      padding: 0.1rem 0;
+      background-image: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      cursor: pointer;
+      line-height: 1.1;
+      text-align: center;
+    }
+
+    .pulse {
+      animation: pulse 0.8s infinite alternate; 
+    }
+
+    @keyframes pulse {
+      from { opacity: 0.85; }
+      to { opacity: 1; }
+    }
+    
+    .delete-button {
+      background-color: var(--danger-color);
+      color: white;
+      border: none;
+      border-radius: 50%; 
+      width: 24px; 
+      height: 24px;
+      padding: 0;
+      transition: all 0.2s;
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.65;
+      z-index: 5;
+      cursor: pointer;
+    }
+    .key-entry-card:hover .delete-button {
+        opacity: 1;
+    }
+    .delete-button:hover {
+      background-color: var(--danger-dark);
+      transform: scale(1.1);
+    }
+    .delete-button .icon {
+        margin: 0;
+        font-size: 0.65rem; 
+    }
+
+    .qr-code-trigger {
+        text-align: center;
+        margin-top: 4px; /* Space between token and QR icon */
+    }
+
+    .qr-code-trigger .button {
+        background: none;
+        border: none;
+        color: #b5b5b5; /* A visible muted color */
+        opacity: 0.8; /* Visible by default */
+        transition: all 0.2s ease;
+        padding: 0;
+        height: 24px;
+        width: 24px;
+        cursor: pointer;
+    }
+    .qr-code-trigger .button:hover {
+        color: var(--primary-color);
+        opacity: 1;
+        transform: scale(1.15);
+    }
+    .qr-code-trigger .icon {
+        font-size: 1.2rem; /* Larger, more visible icon */
+        height: 1.2rem;
+        width: 1.2rem;
+    }
+    
+    .button.is-primary, .button.is-success, .button.is-danger { 
+        border-radius: 8px; 
+        font-weight: 500;
+        padding: 0.75rem 1.5rem; 
+        transition: all 0.2s ease-out;
+    }
+     .button.is-danger.is-outlined { 
+        border-color: var(--danger-color);
+        color: var(--danger-color);
+     }
+     .button.is-danger.is-outlined:hover {
+        background-color: var(--danger-color);
+        color: white;
+     }
+    .button.is-success {
+        background-color: var(--secondary-color);
+        box-shadow: 0 4px 12px rgba(72, 199, 116, 0.2);
+    }
+    .button.is-success:hover {
+        background-color: #3db865;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(72, 199, 116, 0.3);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: var(--secondary-color);
+      color: white;
+      padding: 0.8rem 1.5rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    .toast.show {
+      opacity: 1;
+      visibility: visible;
+      animation: fadeInBottom 0.4s ease-out;
+    }
+
+    @keyframes fadeInBottom {
+      0% { transform: translateX(-50%) translateY(20px); opacity: 0; }
+      100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+    }
+    
+    .add-key-section {
+        padding: 1.5rem;
+        border-top: 1px solid #eee;
+    }
+
+    .key-name-display {
+        font-weight: 500; 
+        color: var(--text-color);
+        margin-bottom: 0.1rem; 
+        font-size: 0.8rem; 
+        cursor: pointer;
+        display: block; 
+        padding: 0.1rem 0.2rem;
+        border-radius: 3px;
+        transition: background-color 0.2s;
+        line-height: 1.2;
+        word-break: break-word; 
+        text-align: center; 
+    }
+    .key-name-display:hover {
+        background-color: #f0f0f0;
+    }
+    .key-name-input {
+        font-size: 0.8rem; 
+        font-weight: 500;
+        padding: 0.2rem 0.4rem;
+        border: 1px solid var(--primary-color);
+        border-radius: 4px;
+        width: 100%; 
+        margin-bottom: 0.25rem;
+        box-sizing: border-box; 
+    }
+    .secret-key-display {
+        font-size: 0.6rem; 
+        color: #bbb; 
+        word-break: break-all;
+        margin-bottom: 0.2rem; 
+        line-height: 1.1;
+        text-align: center; 
+        height: 1.1em; 
+        overflow: hidden;
+    }
+    .no-keys-message {
+        text-align: center;
+        padding: 3rem 2rem; 
+        color: #7a7a7a;
+        background-color: var(--card-bg);
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+    }
+    .no-keys-message p:first-child {
+      font-size: 1.2rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+    
+    .page-footer { 
+        padding: 2rem 1.5rem;
+        background-color: transparent; 
+        text-align: center;
+        margin-top: 2rem;
+    }
+    .instructions-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        padding: 1.5rem;
+        margin-top: 2.5rem;
+        color: #555;
+    }
+    .instructions-card h2 {
+        color: var(--primary-color);
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    .instructions-card p {
+        margin-bottom: 0.5rem;
+        line-height: 1.6;
+        font-size: 0.9rem;
+    }
+    .instructions-card strong {
+        color: var(--primary-dark);
+    }
+    .actions-bar {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 1rem; 
+    }
+    
+    /* QR Code Modal Styles */
+    #qrcode-container img {
+        display: block;
+        margin: auto;
+        border: 6px solid white;
+        border-radius: 10px;
+    }
+    .modal-card-title {
+        color: var(--text-color);
+    }
+
+    /* 用户系统样式 */
+    .user-nav {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: var(--card-shadow);
+    }
+    
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    @media (min-width: 768px) {
+      .user-info {
+        flex-direction: row;
+        justify-content: center;
+      }
+    }
+
+    /* 用户头像样式 */
+    .user-dropdown {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1000;
+    }
+
+    .user-dropdown .dropdown {
+      position: relative;
+    }
+
+    .user-avatar {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .user-avatar:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    /* 用户菜单模态框样式 */
+    .user-menu-modal .modal-card {
+      max-width: 350px;
+      margin: 0 auto;
+    }
+
+    .user-menu-modal .modal-card-head {
+      background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+      color: white;
+      border-bottom: none;
+    }
+
+    .user-menu-modal .modal-card-title {
+      color: white;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .user-menu-modal .user-avatar-large {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.3rem;
+    }
+
+    .user-menu-item {
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      color: var(--text-color);
+      font-size: 0.95rem;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .user-menu-item:hover {
+      background-color: #f8f9fa;
+    }
+
+    .user-menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .user-menu-item .icon {
+      width: 24px;
+      text-align: center;
+      color: var(--primary-color);
+      font-size: 1.1rem;
+    }
+
+    .keys-info {
+      padding: 1rem 1.5rem;
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #e8e8e8;
+      text-align: center;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    /* 移动设备适配 */
+    @media (max-width: 768px) {
+      .container {
+        margin-top: 1rem;
+        padding: 0 1rem;
+      }
+
+      .container.has-user {
+        margin-top: 3rem;
+      }
+
+      .title {
+        font-size: 1.5rem !important;
+        margin-bottom: 1.5rem;
+      }
+
+      .user-dropdown {
+        top: 0.5rem;
+        right: 0.5rem;
+      }
+      
+      .user-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+      }
+    }
+
+    /* 超小屏幕适配 */
+    @media (max-width: 480px) {
+      .container {
+        padding: 0 0.75rem;
+      }
+
+      .container.has-user {
+        margin-top: 2.5rem;
+      }
+
+      .title {
+        font-size: 1.25rem !important;
+        margin-bottom: 1rem;
+      }
+
+      .user-dropdown {
+        top: 0.25rem;
+        right: 0.25rem;
+      }
+
+      .user-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 0.9rem;
+      }
+    }
+    
+    .auth-modal .modal-card {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    
+    .migrate-notification {
+      border-left: 4px solid var(--primary-color);
+    }
+
+    /* 搜索和筛选区域样式 */
+    .search-filter-section {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 1.5rem;
+    }
+
+    .search-filter-section .input {
+      border-radius: 25px;
+      padding-left: 2.5rem;
+    }
+
+    .search-filter-section .control.has-icons-left .icon {
+      color: var(--primary-color);
+    }
+
+    /* 分类相关样式 */
+    .category-social { border-left-color: #e74c3c; }
+    .category-work { border-left-color: #3498db; }
+    .category-cloud { border-left-color: #2ecc71; }
+    .category-finance { border-left-color: #f39c12; }
+    .category-gaming { border-left-color: #9b59b6; }
+    .category-email { border-left-color: #1abc9c; }
+    .category-shopping { border-left-color: #e67e22; }
+    .category-other { border-left-color: #95a5a6; }
+
+    .no-results-message {
+      background: white;
+      border-radius: 8px;
+      box-shadow: var(--card-shadow);
+    }
+
+    /* 左上角链接样式 */
+    .top-links {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 1000;
+      font-size: 1.1rem;
+      font-weight: 700;
+      height: 45px;
+      display: flex;
+      align-items: center;
+    }
+
+    .top-links a {
+      color: #3273dc;
+      text-decoration: none;
+      margin-right: 0.5rem;
+      font-weight: 700;
+      transition: all 0.3s ease;
+    }
+
+    .top-links a:hover {
+      color: #2366d1;
+      text-decoration: underline;
+      transform: translateY(-1px);
+    }
+
+    .top-links .separator {
+      color: #999;
+      margin: 0 0.4rem;
+      font-weight: 500;
+    }
+
+    /* 移动端响应式 */
+    @media (max-width: 768px) {
+      .top-links {
+        font-size: 0.95rem;
+        left: 0.5rem;
+        top: 0.5rem;
+      }
+      
+      .user-dropdown {
+        top: 0.5rem;
+        right: 0.5rem;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+  <div id="toast" class="toast">信息已提示!</div>
+
+  <section id="app" class="section" v-cloak>
+    <!-- 左上角链接 -->
+    <div class="top-links">
+      <a href="https://t.me/hailizix" target="_blank">TG 频道</a>
+      <span class="separator">|</span>
+      <a href="https://hailizi.456785.xyz/" target="_blank">海蛎子发卡网</a>
+    </div>
+
+    <div class="container" :class="{ 'has-user': user.isLoggedIn }">
+      <!-- 用户头像 (右上角) -->
+      <div v-if="user.isLoggedIn" class="user-dropdown">
+        <div class="user-avatar" @click="showUserMenu" aria-label="用户菜单">
+          {{ user.username.charAt(0).toUpperCase() }}
+        </div>
+      </div>
+
+      <h1 class="title is-3 has-text-centered">2FA登录验证码获取</h1>
+
+      <!-- 登录注册按钮 (仅在未登录时显示) -->
+      <div v-if="!user.isLoggedIn" class="user-nav has-text-centered mb-5">
+        <div class="buttons is-centered">
+          <button class="button is-primary" @click="showAuthModal('login')">
+            <span class="icon"><i class="fas fa-sign-in-alt"></i></span>
+            <span>登录</span>
+          </button>
+          <button class="button is-info" @click="showAuthModal('register')">
+            <span class="icon"><i class="fas fa-user-plus"></i></span>
+            <span>注册</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 搜索和筛选区域 -->
+      <div v-if="keys.length > 0" class="search-filter-section mb-4">
+        <div class="columns is-vcentered">
+          <div class="column is-half">
+            <div class="field">
+              <div class="control has-icons-left">
+                <input 
+                  class="input" 
+                  type="text" 
+                  placeholder="🔍 搜索密钥..." 
+                  v-model="searchQuery"
+                  @input="onSearchInput">
+                <span class="icon is-small is-left">
+                  <i class="fas fa-search"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="column">
+            <div class="field is-grouped">
+              <div class="control">
+                <div class="select">
+                  <select v-model="selectedCategory" @change="onCategoryChange">
+                    <option value="">全部分类</option>
+                    <option v-for="category in categories" :key="category.id" :value="category.id">
+                      {{ category.icon }} {{ category.name }} ({{ getCategoryCount(category.id) }})
+                    </option>
+                  </select>
+                </div>
+              </div>
+              <div class="control">
+                <div class="select">
+                  <select v-model="sortBy" @change="onSortChange">
+                    <option value="name">按名称排序</option>
+                    <option value="created">按添加时间</option>
+                    <option value="category">按分类分组</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 搜索结果提示 -->
+        <div v-if="searchQuery" class="notification is-info is-light">
+          找到 {{ filteredKeys.length }} 个匹配的密钥
+          <button class="delete" @click="clearSearch"></button>
+        </div>
+      </div>
+
+      <div class="actions-bar">
+          <button v-if="keys.length > 0" class="button is-danger is-outlined is-small" @click="clearAllKeysWithConfirmation">
+            <span class="icon is-small"><i class="fas fa-trash-alt"></i></span>
+            <span>清空所有密钥</span>
+          </button>
+      </div>
+
+      <div v-if="filteredKeys.length > 0" class="keys-grid">
+        <div v-for="(keyEntry, index) in filteredKeys" :key="keyEntry.id" class="key-entry-card" :class="'category-' + (keyEntry.category || 'other')">
+            <button class="button is-small delete-button" @click="removeKeyById(keyEntry.id)" title="删除密钥">
+              <span class="icon is-small">
+                <i class="fas fa-times"></i>
+              </span>
+            </button>
+            <div v-if="!keyEntry.isEditingName" class="key-name-display" @click="startEditKeyName(keyEntry)">
+              {{ keyEntry.name || '密钥 ' + (index + 1) }}
+              <span class="icon is-small has-text-grey-light ml-1" title="点击编辑名称">
+                <i class="fas fa-pencil-alt fa-xs"></i>
+              </span>
+            </div>
+            <input v-else
+                   :id="'name-input-' + keyEntry.id"
+                   type="text"
+                   class="input is-small key-name-input mb-1" 
+                   v-model="keyEntry.editingNameValue"
+                   @keyup.enter="saveKeyName(keyEntry)"
+                   @blur="saveKeyName(keyEntry)"
+                   placeholder="输入名称">
+            <p class="secret-key-display">{{ keyEntry.secret }}</p>
+             <div class="mb-05">
+              <span class="has-text-grey is-size-7">{{ keyEntry.updatingIn }} 秒后更新</span>
+              <progress class="progress is-info is-small" :value="keyEntry.updatingIn" :max="keyEntry.period"></progress>
+            </div>
+            <p class="title is-5 token" :class="{ 'pulse': keyEntry.updatingIn <= 5 }" :id="'token-' + keyEntry.id" @click="copyToken(keyEntry.token, keyEntry.id)"> 
+              {{ keyEntry.token }}
+            </p>
+            <div class="qr-code-trigger">
+                <button class="button is-small mr-1" @click="showQrCode(keyEntry)" title="显示二维码">
+                    <span class="icon"><i class="fas fa-qrcode"></i></span>
+                </button>
+                <button class="button is-small is-info" @click="showEditKeyModal(keyEntry)" title="编辑密钥">
+                    <span class="icon"><i class="fas fa-edit"></i></span>
+                </button>
+            </div>
+        </div>
+      </div>
+       <div v-else-if="keys.length === 0" class="no-keys-message">
+        <p class="is-size-5">还没有添加密钥哦！</p>
+        <p v-if="user.isLoggedIn">请在下方文本框中粘贴您的密钥可批量添加(每行一个)。</p>
+        <p v-else>登录后可以将密钥保存到云端，下次登录时自动恢复。</p>
+        
+        <!-- 本地数据迁移提示 -->
+        <div v-if="user.isLoggedIn && localKeysCount > 0" class="notification is-info mt-4">
+          <p><strong>发现本地保存的密钥</strong></p>
+          <p>检测到您的浏览器中保存了 {{ localKeysCount }} 个密钥，是否要迁移到云端账户？</p>
+          <div class="buttons is-centered mt-3">
+            <button class="button is-primary" @click="migrateLocalKeys">
+              <span class="icon"><i class="fas fa-cloud-upload-alt"></i></span>
+              <span>迁移到云端</span>
+            </button>
+            <button class="button" @click="ignoreLocalKeys">忽略</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 搜索无结果提示 -->
+      <div v-else-if="keys.length > 0 && filteredKeys.length === 0" class="no-results-message has-text-centered py-6">
+        <div class="icon is-large has-text-grey-light mb-3">
+          <i class="fas fa-search fa-3x"></i>
+        </div>
+        <p class="is-size-5 has-text-grey">没有找到匹配的密钥</p>
+        <p class="has-text-grey">尝试调整搜索条件或分类筛选</p>
+        <button class="button is-primary is-outlined mt-3" @click="clearSearch">
+          <span class="icon"><i class="fas fa-times"></i></span>
+          <span>清除搜索</span>
+        </button>
+      </div>
+
+      <div class="box add-key-section mt-5">
+        <h2 class="title is-4 has-text-centered mb-4">添加密钥</h2>
+        <div class="field">
+          <label class="label">密钥列表可批量添加(每行一个)</label>
+          <div class="control">
+            <textarea class="textarea" 
+                      v-model="batchSecretsInput" 
+                      @paste.prevent="handlePaste" 
+                      @blur="processBatchInputOnBlur"
+                      placeholder="BCLQ5FLW3TLOTUXK&#10;admin@gmail.com	X3ID2JRHA6H53JIR&#10;Google:G6RYBUGRDCS74LD4" 
+                      rows="5"></textarea>
+          </div>
+          <p class="help">支持格式：<code>密钥</code>, <code>名称:密钥</code>。也支持制表符 (Tab) 分隔。位数(默认6)和周期(默认30)</p>
+        </div>
+         <div class="columns is-mobile">
+          <div class="column">
+            <div class="field">
+              <label class="label">默认位数</label>
+              <div class="control">
+                <input class="input is-small" type="number" v-model.number="batchDefaultSettings.digits">
+              </div>
+            </div>
+          </div>
+          <div class="column">
+            <div class="field">
+              <label class="label">默认周期 (秒)</label>
+              <div class="control">
+                <input class="input is-small" type="number" v-model.number="batchDefaultSettings.period">
+              </div>
+            </div>
+          </div>
+          <div class="column">
+            <div class="field">
+              <label class="label">默认分类</label>
+              <div class="control">
+                <div class="select is-small is-fullwidth">
+                  <select v-model="batchDefaultSettings.category">
+                    <option v-for="category in categories" :key="category.id" :value="category.id">
+                      {{ category.icon }} {{ category.name }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field has-text-centered mt-4">
+            <button class="button is-success is-fullwidth" @click="processBatchInput(false)" :disabled="!batchSecretsInput.trim()">
+              <span class="icon">
+                  <i class="fas fa-plus-circle"></i>
+              </span>
+              <span>添加输入框中的密钥</span>
+            </button>
+        </div>
+      </div>
+
+            <div class="instructions-card"> 
+        <h2 class="title is-5">使用说明</h2>
+        <p><strong>1. 添加密钥：</strong> 在"密钥列表"文本框中输入或粘贴您的Base32格式密钥，每行一个。支持格式如 <code>密钥</code> 或 <code>名称:密钥</code> (也支持制表符分隔)。系统现在支持大小写Base32密钥格式。</p>
+        <p><strong>2. 批量设置：</strong> 可设置默认位数(默认6位)、周期(默认30秒)和分类。点击"添加输入框中的密钥"按钮，或当输入框失去焦点时，系统将自动尝试添加。</p>
+        <p><strong>3. 智能分类：</strong> 系统会根据密钥名称自动分类到社交媒体、工作工具、云服务、金融服务、游戏娱乐、邮箱服务、电商购物等8个分类中。也可手动指定分类。</p>
+        <p><strong>4. 搜索过滤：</strong> 使用顶部搜索框快速查找密钥，支持按分类筛选和多种排序方式(名称、创建时间、分类)。</p>
+        <p><strong>5. 密钥管理：</strong> 点击生成的<strong>数字验证码</strong>即可复制到剪贴板。点击密钥卡片上的<strong>名称</strong>可以进行修改。点击 <i class="fas fa-edit"></i> 图标可编辑密钥详细信息包括分类。点击 <i class="fas fa-times has-text-danger"></i> 图标可直接删除密钥。</p>
+        <p><strong>6. 二维码功能：</strong> 点击验证码下方的 <i class="fas fa-qrcode"></i> 图标可显示用于手机APP扫描的二维码。</p>
+        <p><strong>7. 用户系统：</strong> 支持注册登录，云端同步密钥数据。点击右上角用户头像可访问修改密码、注销等功能。</p>
+      </div>
+
+    </div>
+
+    <!-- QR Code Modal -->
+    <div class="modal" :class="{'is-active': isQrModalActive}">
+        <div class="modal-background" @click="closeQrModal"></div>
+        <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">扫描二维码添加密钥</p>
+            <button class="delete" aria-label="close" @click="closeQrModal"></button>
+        </header>
+        <section class="modal-card-body is-flex is-flex-direction-column is-align-items-center">
+            <div id="qrcode-container"></div>
+            <p class="has-text-centered mt-2 has-text-weight-bold">{{ qrCodeKeyName }}</p>
+        </section>
+        </div>
+    </div>
+
+    <!-- 用户认证模态框 -->
+    <div class="modal" :class="{'is-active': authModal.isActive}">
+        <div class="modal-background" @click="closeAuthModal"></div>
+        <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">{{ authModal.mode === 'login' ? '用户登录' : '用户注册' }}</p>
+            <button class="delete" aria-label="close" @click="closeAuthModal"></button>
+        </header>
+        <section class="modal-card-body">
+            <form @submit.prevent="authModal.mode === 'login' ? login() : register()">
+            <div class="field">
+                <label class="label">用户名</label>
+                <div class="control has-icons-left">
+                <input class="input" type="text" v-model="authModal.form.username" placeholder="输入用户名" required>
+                <span class="icon is-small is-left">
+                    <i class="fas fa-user"></i>
+                </span>
+                </div>
+            </div>
+            
+            <div class="field">
+                <label class="label">密码</label>
+                <div class="control has-icons-left">
+                <input class="input" type="password" v-model="authModal.form.password" placeholder="输入密码" required>
+                <span class="icon is-small is-left">
+                    <i class="fas fa-lock"></i>
+                </span>
+                </div>
+                <p v-if="authModal.mode === 'register'" class="help">密码长度不能少于6个字符</p>
+            </div>
+            
+            <div v-if="authModal.error" class="notification is-danger">
+                {{ authModal.error }}
+            </div>
+            
+            <div class="field is-grouped">
+                <div class="control">
+                <button class="button is-primary" type="submit" :class="{'is-loading': authModal.isLoading}">
+                    {{ authModal.mode === 'login' ? '登录' : '注册' }}
+                </button>
+                </div>
+                <div class="control">
+                <button class="button" type="button" @click="closeAuthModal">取消</button>
+                </div>
+            </div>
+            </form>
+            
+            <hr>
+            <div class="has-text-centered">
+            <a @click="toggleAuthMode" class="is-link">
+                {{ authModal.mode === 'login' ? '没有账户？点击注册' : '已有账户？点击登录' }}
+            </a>
+            </div>
+        </section>
+        </div>
+    </div>
+
+    <!-- 用户菜单模态框 -->
+    <div class="modal user-menu-modal" :class="{'is-active': userMenuModal.isActive}">
+        <div class="modal-background" @click="closeUserMenu"></div>
+        <div class="modal-card">
+        <header class="modal-card-head">
+            <div class="modal-card-title">
+            <div class="user-avatar-large">
+                {{ user.username.charAt(0).toUpperCase() }}
+            </div>
+            <div>
+                <div>{{ user.username }}</div>
+                <small style="opacity: 0.8; font-weight: normal;">用户中心</small>
+            </div>
+            </div>
+            <button class="delete" aria-label="close" @click="closeUserMenu"></button>
+        </header>
+        <section class="modal-card-body" style="padding: 0;">
+            <div class="keys-info">
+            <i class="fas fa-key mr-2"></i>云端已保存 {{ keys.length }} 个密钥
+            </div>
+            <button class="user-menu-item" @click="showChangePasswordModalFromMenu">
+            <i class="fas fa-lock icon"></i>
+            <span>修改密码</span>
+            </button>
+            <button class="user-menu-item" @click="logoutFromMenu">
+            <i class="fas fa-sign-out-alt icon"></i>
+            <span>注销登录</span>
+            </button>
+        </section>
+        </div>
+    </div>
+
+    <!-- 修改密码模态框 -->
+    <div class="modal" :class="{'is-active': changePasswordModal.isActive}">
+        <div class="modal-background" @click="closeChangePasswordModal"></div>
+        <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">修改密码</p>
+            <button class="delete" aria-label="close" @click="closeChangePasswordModal"></button>
+        </header>
+        <section class="modal-card-body">
+            <form @submit.prevent="changePassword()">
+            <div class="field">
+                <label class="label">当前密码</label>
+                <div class="control has-icons-left">
+                <input class="input" type="password" v-model="changePasswordModal.form.currentPassword" placeholder="输入当前密码" required>
+                <span class="icon is-small is-left">
+                    <i class="fas fa-lock"></i>
+                </span>
+                </div>
+            </div>
+            
+            <div class="field">
+                <label class="label">新密码</label>
+                <div class="control has-icons-left">
+                <input class="input" type="password" v-model="changePasswordModal.form.newPassword" placeholder="输入新密码" required>
+                <span class="icon is-small is-left">
+                    <i class="fas fa-key"></i>
+                </span>
+                </div>
+                <p class="help">密码长度不能少于6个字符</p>
+            </div>
+            
+            <div class="field">
+                <label class="label">确认新密码</label>
+                <div class="control has-icons-left">
+                <input class="input" type="password" v-model="changePasswordModal.form.confirmPassword" placeholder="再次输入新密码" required>
+                <span class="icon is-small is-left">
+                    <i class="fas fa-key"></i>
+                </span>
+                </div>
+            </div>
+            
+            <div v-if="changePasswordModal.error" class="notification is-danger">
+                {{ changePasswordModal.error }}
+            </div>
+            
+            <div class="field is-grouped">
+                <div class="control">
+                <button class="button is-primary" type="submit" :class="{'is-loading': changePasswordModal.isLoading}">
+                    修改密码
+                </button>
+                </div>
+                <div class="control">
+                <button class="button" type="button" @click="closeChangePasswordModal">取消</button>
+                </div>
+            </div>
+            </form>
+        </section>
+        </div>
+    </div>
+
+    <!-- 编辑密钥模态框 -->
+    <div class="modal" :class="{'is-active': editKeyModal.isActive}">
+        <div class="modal-background" @click="closeEditKeyModal"></div>
+        <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">编辑密钥</p>
+            <button class="delete" aria-label="close" @click="closeEditKeyModal"></button>
+        </header>
+        <section class="modal-card-body">
+            <form @submit.prevent="updateKey()">
+            <div class="field">
+                <label class="label">密钥名称</label>
+                <div class="control">
+                <input class="input" type="text" v-model="editKeyModal.form.name" placeholder="输入密钥名称" required>
+                </div>
+            </div>
+            
+            <div class="field">
+                <label class="label">密钥</label>
+                <div class="control">
+                <input class="input" type="text" v-model="editKeyModal.form.secret" placeholder="输入Base32格式密钥" required>
+                </div>
+                <p class="help">Base32格式的密钥，如：ABCDEFGHIJKLMNOP</p>
+            </div>
+            
+            <div class="columns">
+                <div class="column">
+                    <div class="field">
+                        <label class="label">位数</label>
+                        <div class="control">
+                        <input class="input" type="number" v-model.number="editKeyModal.form.digits" min="4" max="10" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">周期(秒)</label>
+                        <div class="control">
+                        <input class="input" type="number" v-model.number="editKeyModal.form.period" min="15" max="300" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="field">
+                <label class="label">算法</label>
+                <div class="control">
+                <div class="select">
+                    <select v-model="editKeyModal.form.algorithm">
+                    <option value="SHA1">SHA1</option>
+                    <option value="SHA256">SHA256</option>
+                    <option value="SHA512">SHA512</option>
+                    </select>
+                </div>
+                </div>
+            </div>
+            
+            <div class="field">
+                <label class="label">分类</label>
+                <div class="control">
+                <div class="select">
+                    <select v-model="editKeyModal.form.category">
+                    <option v-for="category in categories" :key="category.id" :value="category.id">
+                        {{ category.icon }} {{ category.name }}
+                    </option>
+                    </select>
+                </div>
+                </div>
+            </div>
+            
+            <div v-if="editKeyModal.error" class="notification is-danger">
+                {{ editKeyModal.error }}
+            </div>
+            
+            <div class="field is-grouped">
+                <div class="control">
+                <button class="button is-primary" type="submit" :class="{'is-loading': editKeyModal.isLoading}">
+                    保存修改
+                </button>
+                </div>
+                <div class="control">
+                <button class="button" type="button" @click="closeEditKeyModal">取消</button>
+                </div>
+            </div>
+            </form>
+        </section>
+        </div>
+    </div>
+
+  </section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <script src="js/assets/vue-3.4.20.global.prod.js"></script>
+  <script src="js/assets/otpauth-9.1.3.min.js"></script>
+  <script src="js/app.js?v=1.11"></script> 
+</body>
+</html>

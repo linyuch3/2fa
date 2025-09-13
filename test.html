@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API测试页面</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        button { margin: 5px; padding: 10px 15px; }
+        input { margin: 5px; padding: 8px; }
+        textarea { width: 100%; height: 100px; margin: 5px 0; }
+        .response { background: #f5f5f5; padding: 10px; margin: 10px 0; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>2FA API测试页面</h1>
+    
+    <div class="test-section">
+        <h2>用户注册</h2>
+        <input type="text" id="reg-username" placeholder="用户名">
+        <input type="password" id="reg-password" placeholder="密码">
+        <button onclick="testRegister()">注册</button>
+        <div id="reg-response" class="response"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>用户登录</h2>
+        <input type="text" id="login-username" placeholder="用户名">
+        <input type="password" id="login-password" placeholder="密码">
+        <button onclick="testLogin()">登录</button>
+        <div id="login-response" class="response"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>密钥管理</h2>
+        <button onclick="testGetKeys()">获取密钥</button>
+        <button onclick="testAddKey()">添加测试密钥</button>
+        <button onclick="testChangePassword()">修改密码</button>
+        <button onclick="testLogout()">注销</button>
+        <div id="keys-response" class="response"></div>
+    </div>
+
+    <script>
+        let sessionToken = '';
+
+        async function testRegister() {
+            const username = document.getElementById('reg-username').value;
+            const password = document.getElementById('reg-password').value;
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const result = await response.json();
+                document.getElementById('reg-response').textContent = JSON.stringify(result, null, 2);
+                document.getElementById('reg-response').className = result.success ? 'response success' : 'response error';
+            } catch (error) {
+                document.getElementById('reg-response').textContent = 'Error: ' + error.message;
+                document.getElementById('reg-response').className = 'response error';
+            }
+        }
+
+        async function testLogin() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    sessionToken = result.sessionId;
+                }
+                document.getElementById('login-response').textContent = JSON.stringify(result, null, 2);
+                document.getElementById('login-response').className = result.success ? 'response success' : 'response error';
+            } catch (error) {
+                document.getElementById('login-response').textContent = 'Error: ' + error.message;
+                document.getElementById('login-response').className = 'response error';
+            }
+        }
+
+        async function testGetKeys() {
+            try {
+                const response = await fetch('/api/keys', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                document.getElementById('keys-response').textContent = JSON.stringify(result, null, 2);
+                document.getElementById('keys-response').className = result.success ? 'response success' : 'response error';
+            } catch (error) {
+                document.getElementById('keys-response').textContent = 'Error: ' + error.message;
+                document.getElementById('keys-response').className = 'response error';
+            }
+        }
+
+        async function testAddKey() {
+            try {
+                const response = await fetch('/api/keys', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: '测试密钥',
+                        secret: 'ABCDEFGHIJKLMNOP',
+                        digits: 6,
+                        period: 30
+                    })
+                });
+                
+                const result = await response.json();
+                document.getElementById('keys-response').textContent = JSON.stringify(result, null, 2);
+                document.getElementById('keys-response').className = result.success ? 'response success' : 'response error';
+            } catch (error) {
+                document.getElementById('keys-response').textContent = 'Error: ' + error.message;
+                document.getElementById('keys-response').className = 'response error';
+            }
+        }
+
+        async function testChangePassword() {
+            const currentPassword = prompt('请输入当前密码:');
+            const newPassword = prompt('请输入新密码:');
+            
+            if (!currentPassword || !newPassword) return;
+
+            try {
+                const response = await fetch('/api/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        currentPassword: currentPassword,
+                        newPassword: newPassword
+                    })
+                });
+                
+                const result = await response.json();
+                document.getElementById('keys-response').textContent = JSON.stringify(result, null, 2);
+                document.getElementById('keys-response').className = result.success ? 'response success' : 'response error';
+            } catch (error) {
+                document.getElementById('keys-response').textContent = 'Error: ' + error.message;
+                document.getElementById('keys-response').className = 'response error';
+            }
+        }
+
+        async function testLogout() {
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: sessionToken })
+                });
+                
+                const result = await response.json();
+                sessionToken = '';
+                document.getElementById('keys-response').textContent = JSON.stringify(result, null, 2);
+                document.getElementById('keys-response').className = result.success ? 'response success' : 'response error';
+            } catch (error) {
+                document.getElementById('keys-response').textContent = 'Error: ' + error.message;
+                document.getElementById('keys-response').className = 'response error';
+            }
+        }
+    </script>
+</body>
+</html>
